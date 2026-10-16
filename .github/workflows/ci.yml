@@ -130,7 +130,7 @@ jobs:
         run: npx playwright test
       - if: failure()
         run: cat uvicorn.log
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-results
