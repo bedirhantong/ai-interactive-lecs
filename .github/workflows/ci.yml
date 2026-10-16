@@ -37,7 +37,7 @@ jobs:
       run:
         working-directory: apps/api
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -68,7 +68,7 @@ jobs:
       run:
         working-directory: apps/web
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -103,7 +103,7 @@ jobs:
       ATOLYE_ALLOWED_ORIGINS: http://localhost:3100
       E2E_REQUIRE_API: "1"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -155,7 +155,7 @@ jobs:
       ATOLYE_DATABASE_URL: postgresql+psycopg://atolye:atolye@localhost:5432/atolye
       ATOLYE_DEMO_MODE: "true"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -182,7 +182,7 @@ jobs:
     name: Colab Lab · template builds and runs end to end
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"  # close to Google Colab's runtime
@@ -198,7 +198,7 @@ jobs:
     name: Production · build images, start the stack, smoke test over HTTPS
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Throwaway secrets for this run
         run: |
           cat > ci.env <<ENV
