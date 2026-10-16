@@ -37,8 +37,8 @@ jobs:
       run:
         working-directory: apps/api
     steps:
-      - uses: actions/checkout@v6
       - uses: actions/setup-python@v7
+      - uses: actions/checkout@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -68,8 +68,8 @@ jobs:
       run:
         working-directory: apps/web
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -103,13 +103,13 @@ jobs:
       ATOLYE_ALLOWED_ORIGINS: http://localhost:3100
       E2E_REQUIRE_API: "1"
     steps:
-      - uses: actions/checkout@v6
       - uses: actions/setup-python@v7
+      - uses: actions/checkout@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: apps/api/pyproject.toml
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -130,7 +130,7 @@ jobs:
         run: npx playwright test
       - if: failure()
         run: cat uvicorn.log
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-results
@@ -155,13 +155,13 @@ jobs:
       ATOLYE_DATABASE_URL: postgresql+psycopg://atolye:atolye@localhost:5432/atolye
       ATOLYE_DEMO_MODE: "true"
     steps:
-      - uses: actions/checkout@v6
       - uses: actions/setup-python@v7
+      - uses: actions/checkout@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: apps/api/pyproject.toml
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
       - working-directory: apps/api
@@ -182,8 +182,8 @@ jobs:
     name: Colab Lab · template builds and runs end to end
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
       - uses: actions/setup-python@v7
+      - uses: actions/checkout@v7
         with:
           python-version: "3.12"  # close to Google Colab's runtime
       - run: pip install numpy pandas scikit-learn matplotlib nbformat nbclient ipykernel
@@ -198,7 +198,7 @@ jobs:
     name: Production · build images, start the stack, smoke test over HTTPS
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Throwaway secrets for this run
         run: |
           cat > ci.env <<ENV
