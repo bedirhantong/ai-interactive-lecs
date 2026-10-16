@@ -28,7 +28,7 @@ _Last updated: 2026-10-16. Roadmap: [`docs/REVISED_ROADMAP.md`](docs/REVISED_ROA
 | Sync: two-device conflict (412) and resolution, 428 without precondition, atomic compare-and-set at the database level, idempotent event retries (also within a batch and per user), report dedup across reformatting, CORS for If-Match/ETag | pytest (84 tests total, SQLite and PostgreSQL) |
 | Postman collection (49 requests, 92 assertions) against the running API, including a run that reuses leftover cookies | Newman |
 | Production stack from scratch (db → migrate → api/maintenance/web → Caddy HTTPS): readiness, web pages, HSTS and security headers, docs disabled, demo refused, admin login with HttpOnly+Secure+SameSite cookie, CSRF rejection, cleanup job | `scripts/prod_smoke_test.sh` against `deploy/compose.prod.yml`, locally with Docker |
-| CI on GitHub Actions | First run: 5 of 6 jobs green. The production job failed on GitHub's Compose v2 (maintenance service had no healthcheck; images were pulled instead of built). Reproduced locally with Compose v2.40.3 and fixed; the fix is verified locally, not yet on GitHub. |
+| CI on GitHub Actions (all 6 jobs: API on SQLite and PostgreSQL, web build, e2e in Chrome, Postman contract, Colab notebook execution, production stack smoke test over HTTPS) | Green on GitHub. The first run's production-job failure (Compose v2 healthcheck/pull) was reproduced locally and fixed. |
 | Python lint/format (ruff, incl. bandit security rules) | `npm run lint:api` |
 | Alembic migration upgrades, matches models (`alembic check`) and downgrades | SQLite and PostgreSQL 17 (Docker) |
 | All API tests pass on PostgreSQL with the schema built by migrations | `npm run test:api:pg` |
