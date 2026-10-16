@@ -1,108 +1,95 @@
 # AI Atölye
 
-An interactive AI learning platform for students aged 11–18 in Türkiye. Students learn by experimenting, writing real Python and training real models: **Understand → Experiment → Code → Train → Evaluate → Improve → Build.** The student-facing interface is in Turkish.
+[![CI](https://github.com/bedirhantong/ai-interactive-lecs/actions/workflows/ci.yml/badge.svg)](https://github.com/bedirhantong/ai-interactive-lecs/actions/workflows/ci.yml)
+[![Code: MIT](https://img.shields.io/badge/kod-MIT-blue.svg)](LICENSE)
+[![Content: CC BY 4.0](https://img.shields.io/badge/i%C3%A7erik-CC%20BY%204.0-lightgrey.svg)](content/LICENSE.md)
 
-AI Atölye orchestrates the learning journey and is not a compute provider. All computation happens in one of three places, and none of them is our server:
+**Türkçe:** AI Atölye, 11–18 yaş öğrenciler için açık kaynaklı, Türkçe ve uygulamalı bir yapay zekâ öğrenme ortamıdır. Öğrenciler video izleyerek değil, deneyerek öğrenir: önce kod yazmadan görsel deneyler, sonra deneyin ürettiği Python kodunu düzenleme, sonra kendi kodunu yazma, en son kendi Google Colab oturumunda daha büyük modeller eğitme. Öğretmenler sınıf açar, öğrenci hesabı verir (öğrenciden e-posta istenmez), ödev verir ve öğrencilerin yaptıklarını ve yansıtma yazılarını görür. Her şey tarayıcıda çalışır; sunucu öğrenci kodu çalıştırmaz, GPU gerekmez.
+
+**English:** An open-source, Turkish, hands-on AI learning environment for students aged 11–18. Students move from no-code visual experiments, to the Python those experiments generate, to their own code, to training larger models in their own Google Colab session. Teachers create classes and student accounts (no student emails), assign lessons and review students' evidence and reflections. All computation runs in the browser or in Colab; the server never runs student code.
+
+## How it works
 
 | Lab | Runs on | Examples |
 |---|---|---|
-| **Görsel Lab** (Visual) | Student's browser, TypeScript | Linear regression with gradient descent, KNN decision regions, decision trees, confusion matrices |
-| **Python Lab** | Student's browser, Pyodide in a Web Worker | Code cells, graded challenges, numpy on demand |
-| **Colab Lab** | Student's own Google Colab session | Larger datasets, random forests, neural networks; the report is imported back |
+| **Görsel Lab** (visual) | Student's browser, TypeScript | Linear regression with real gradient descent, KNN decision regions, decision trees, confusion matrices |
+| **Python Lab** | Student's browser, Pyodide in a Web Worker | Code cells, auto-graded challenges with Turkish error explanations, numpy on demand |
+| **Colab Lab** | Student's own Google Colab session | Larger datasets, random forests, neural networks; a training report is imported back |
 
-There is no GPU, no Jupyter server and no student code execution in the API.
+- **Works without an account.** Guests use it in demo mode; work stays in the browser.
+- **With an account**, work is saved locally first and synced to the server: it follows the student to another computer, and edits made on two devices are never silently overwritten (the student chooses).
+- **Privacy by design** (KVKK): minimal data, no student email, data export and deletion, and an access log that shows students when a teacher viewed their work.
 
-## What's in the repository
+Flagship project: **Akıllı Geri Dönüşüm Makinesi** — a recycling classifier built at three levels (Kâşif, Yapıcı, Geliştirici) with a shared learning objective.
+
+## Repository
 
 ```
-apps/web     Next.js 16 (App Router), TypeScript, Tailwind v4, zustand, Monaco, Pyodide
-apps/api     FastAPI, SQLAlchemy 2, Alembic, PostgreSQL: accounts, snapshots, progress, reports, classrooms
-content/     Lessons (JSON), learning paths, project, skills, synthetic datasets (CSV), Colab templates (.ipynb)
-scripts/     Dataset generator, Colab notebook builder and headless verifier
-docs/        ARCHITECTURE.md, ARCHITECTURE_AUDIT.md, REVISED_ROADMAP.md
+apps/web     Next.js 16, TypeScript, Tailwind v4, zustand, Monaco, Pyodide
+apps/api     FastAPI, SQLAlchemy 2, Alembic, PostgreSQL (layered: routes → services → repositories)
+content/     Lessons (JSON), learning paths, project, skills, synthetic datasets, Colab templates  [CC BY 4.0]
+scripts/     Dataset generator, Colab notebook builder/verifier, Postman collection builder, prod smoke test
+deploy/      One-command production stack (Docker Compose + Caddy HTTPS)
+docs/        Architecture, sync contract, deployment, local development (Turkish), KVKK notes
 ```
 
-Current status and known gaps: [`DEVELOPMENT_STATUS.md`](DEVELOPMENT_STATUS.md).
+Status and known limitations: [`DEVELOPMENT_STATUS.md`](DEVELOPMENT_STATUS.md).
 
-**Yerel geliştirme kılavuzu (Türkçe): Docker, API, DBeaver, Postman ve sorun giderme → [`docs/YEREL_GELISTIRME.md`](docs/YEREL_GELISTIRME.md)**
+## Quick start
 
-## Requirements
-
-- Node.js 20+ (tested on 26) and npm
-- Python 3.12+ (tested on 3.14), only needed for the API and notebook tooling
-- Docker, optional, for PostgreSQL
-- Internet access in the browser: Pyodide and Monaco load from jsDelivr
-
-No paid services, GPU or LLM API key are required.
-
-## Run the web app (the full student experience)
+Requirements: Node.js 20+, and for the API Python 3.12+ and Docker.
 
 ```bash
-cd apps/web
-npm install
-cp .env.example .env.local   # optional; see below
-npm run dev                  # http://localhost:3000
+# Student experience only (guest/demo mode, no backend needed)
+cd apps/web && npm install && npm run dev          # http://localhost:3000
+
+# Full stack: accounts, teacher panel, sync
+npm run db:up                                       # PostgreSQL 17 in Docker (localhost:5433)
+cd apps/api && python3 -m venv .venv && .venv/bin/pip install -e ".[dev]" && cp .env.example .env && cd ../..
+npm run db:migrate && npm run api                   # http://localhost:8000/docs
 ```
 
-The web app works on its own in **demo mode**: no account is needed, and progress is stored only in the browser (`localStorage`). Start at `/` or `/ana-sayfa`.
+With the API running, open http://localhost:3000/giris: in development you can try a **demo teacher** and a **demo student** without creating accounts.
 
-Optional settings in `apps/web/.env.local`:
-
-- `NEXT_PUBLIC_COLAB_GITHUB_REPO=owner/repo` enables the **"Google Colab'da Aç"** button once this repository is public on GitHub. Without it, students download the `.ipynb` file and upload it to Colab.
-- `NEXT_PUBLIC_PYODIDE_INDEX_URL` lets you self-host Pyodide.
-
-## Run the API (optional at this stage)
-
-The web app does not call the API yet (see the status document). To run it:
-
-```bash
-npm run db:up                                 # PostgreSQL 17 in Docker on localhost:5433 (5433 avoids clashing with a local Postgres)
-cd apps/api
-python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
-cp .env.example .env
-.venv/bin/alembic upgrade head
-.venv/bin/uvicorn app.main:app --reload --port 8000   # docs at http://localhost:8000/docs
-```
-
-- **Demo accounts:** with `ATOLYE_DEMO_MODE=true`, `POST /api/v1/auth/demo {"role": "student"|"teacher"}` creates a throwaway account. The app refuses to start with demo mode on when `ATOLYE_ENV=production`.
-- **Teacher/admin accounts:** `.venv/bin/python -m app.cli create-user --role teacher --email ... --name ...`. The password is read interactively; no credentials live in the code.
-- State-changing requests must send the header `x-atolye-client: 1` (CSRF protection for cookie sessions).
+Detailed guide (Turkish), including Docker, DBeaver, Postman and troubleshooting: [`docs/YEREL_GELISTIRME.md`](docs/YEREL_GELISTIRME.md).
 
 ## Tests
 
 ```bash
-cd apps/web
-npm run typecheck && npm run lint
-npm test                    # Vitest: content, ML, TS↔Python equivalence (needs python3), store, runtime, Colab reports
-npx playwright test         # E2E in installed Chrome; needs network for Pyodide
-
-cd ../api && .venv/bin/python -m pytest -q   # in-memory SQLite
-npm run test:api:pg                          # same tests on PostgreSQL, schema built by the Alembic migrations (from the repo root)
+npm run lint:api && npm run test:api && npm run test:api:pg     # API: SQLite and PostgreSQL
+cd apps/web && npm run lint && npm run typecheck && npm test     # web unit tests
+cd apps/web && npx playwright test                              # e2e in Chrome (account/sync test needs the API)
 ```
+
+CI runs all of this on every push, plus the Postman API contract, the Colab notebook end to end, and a production-image smoke test over HTTPS.
 
 ## Production
 
-One server, Docker Compose, automatic HTTPS (Caddy) in front of the web app and API on one domain:
-
 ```bash
-cp deploy/.env.prod.example deploy/.env.prod   # fill in SITE_ADDRESS and the secrets
-npm run prod:up                                # db → migrate → api, maintenance, web → proxy
+cp deploy/.env.prod.example deploy/.env.prod   # domain and secrets
+npm run prod:up                                # db → migrate → api, maintenance, web → Caddy (automatic HTTPS)
 ```
 
-Full guide (Turkish): [`docs/DAGITIM.md`](docs/DAGITIM.md). CI (`.github/workflows/ci.yml`) runs lint, unit tests (SQLite and PostgreSQL), web build, Playwright e2e, the Postman contract, the Colab notebook, and a production-image smoke test over HTTPS on every push.
+Guide (Turkish): [`docs/DAGITIM.md`](docs/DAGITIM.md). Before using it with real students, read [`docs/KVKK_NOTLARI.md`](docs/KVKK_NOTLARI.md): it lists the legal questions (data controller, parental consent, retention) a school must settle.
 
-## Content tooling
+## Documentation
 
-```bash
-python3 scripts/generate_datasets.py           # regenerate synthetic CSV datasets (seeded)
-python3 scripts/build_colab_notebooks.py       # regenerate content/colab/*.ipynb from source
-# Execute every Colab template headlessly and refresh the real report fixture used by the tests:
-python3 -m venv .venv-notebooks && .venv-notebooks/bin/pip install numpy pandas scikit-learn matplotlib nbformat nbclient ipykernel
-.venv-notebooks/bin/python scripts/verify_colab_notebook.py
-```
+| | |
+|---|---|
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | System design, security boundaries |
+| [`docs/SENKRONIZASYON.md`](docs/SENKRONIZASYON.md) | Offline-first sync contract (ETag/If-Match, idempotent events) |
+| [`docs/YEREL_GELISTIRME.md`](docs/YEREL_GELISTIRME.md) | Local development, backend layering rules |
+| [`docs/DAGITIM.md`](docs/DAGITIM.md) | Deployment, backups, monitoring |
+| [`docs/KVKK_NOTLARI.md`](docs/KVKK_NOTLARI.md) | Privacy: what is implemented, what needs legal review |
+| [`docs/postman/`](docs/postman) | Postman collection for the API |
 
-Lessons are JSON files in `content/notebooks/`, validated against `apps/web/lib/content/schema.ts` at build time and by `npm test`. Bump a lesson's `version` when you change its cells; saved student state migrates per cell.
+## Contributing
 
-## Privacy
+Lessons, teacher feedback and fixes are very welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md). Please report security issues privately ([`SECURITY.md`](SECURITY.md)).
 
-Demo mode collects nothing: there are no accounts, analytics or third-party trackers. The API is designed for data minimization: age bands instead of birth dates, private projects, and teacher access only after the teacher approves a join request. A KVKK and legal review is required before any production use with real student accounts (see `docs/REVISED_ROADMAP.md`, Phase 7).
+## License
+
+- Code: [MIT](LICENSE)
+- Educational content in `content/` (lessons, datasets, notebooks): [CC BY 4.0](content/LICENSE.md)
+
+Datasets are synthetic (computer-generated for teaching) and do not describe real people or measurements.

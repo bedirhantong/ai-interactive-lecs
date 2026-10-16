@@ -1,0 +1,18 @@
+name: Ders önerisi ya da öğretmen geri bildirimi
+description: Yeni bir ders fikri ya da sınıfta kullanım deneyimi
+labels: [içerik]
+body:
+  - type: dropdown
+    id: tur
+    attributes:
+      label: Tür
+      options: [Yeni ders fikri, Mevcut derste düzeltme, Sınıfta kullanım deneyimi]
+    validations:
+      required: true
+  - type: textarea
+    id: aciklama
+    attributes:
+      label: Açıklama
+      description: Hangi yaş/sınıf, hangi kazanım, öğrenciler ne yapacak? Sınıfta denediysen ne işe yaradı, ne yaramadı?
+    validations:
+      required: true

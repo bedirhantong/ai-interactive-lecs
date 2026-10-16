@@ -1,0 +1,28 @@
+name: Hata bildirimi
+description: Bir şey beklendiği gibi çalışmıyor
+labels: [hata]
+body:
+  - type: textarea
+    id: ne-oldu
+    attributes:
+      label: Ne oldu?
+      description: Gördüğün davranış ve beklediğin davranış.
+    validations:
+      required: true
+  - type: textarea
+    id: adimlar
+    attributes:
+      label: Nasıl tekrarlanır?
+      placeholder: "1. /ders/... sayfasını aç\n2. ...\n3. ..."
+    validations:
+      required: true
+  - type: input
+    id: request-id
+    attributes:
+      label: İstek kimliği (varsa)
+      description: Hata mesajındaki request_id. Kişisel veri (öğrenci adı, şifre) paylaşma.
+  - type: input
+    id: ortam
+    attributes:
+      label: Tarayıcı / cihaz
+      placeholder: "Chrome 140, okul bilgisayarı (Windows 10)"

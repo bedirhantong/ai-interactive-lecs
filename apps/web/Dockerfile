@@ -9,7 +9,7 @@ COPY apps/web/package.json apps/web/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 
 FROM node:24-slim AS build
-ARG NEXT_PUBLIC_COLAB_GITHUB_REPO=""
+ARG NEXT_PUBLIC_COLAB_GITHUB_REPO="bedirhantong/ai-interactive-lecs"
 ARG NEXT_PUBLIC_COLAB_GITHUB_BRANCH="main"
 ARG NEXT_PUBLIC_PYODIDE_INDEX_URL="https://cdn.jsdelivr.net/pyodide/v314.0.7/full/"
 ENV NEXT_TELEMETRY_DISABLED=1 \

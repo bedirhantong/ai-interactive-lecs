@@ -1,0 +1,21 @@
+# Weekly dependency updates, grouped to keep the PR count low.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /apps/web
+    schedule: { interval: weekly }
+    groups:
+      web-minor-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: pip
+    directory: /apps/api
+    schedule: { interval: weekly }
+    groups:
+      api-minor-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }
+  - package-ecosystem: docker
+    directories: [/apps/api, /apps/web]
+    schedule: { interval: monthly }

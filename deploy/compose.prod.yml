@@ -88,7 +88,7 @@ services:
       context: ..
       dockerfile: apps/web/Dockerfile
       args:
-        NEXT_PUBLIC_COLAB_GITHUB_REPO: ${NEXT_PUBLIC_COLAB_GITHUB_REPO:-}
+        NEXT_PUBLIC_COLAB_GITHUB_REPO: ${NEXT_PUBLIC_COLAB_GITHUB_REPO-bedirhantong/ai-interactive-lecs}
         NEXT_PUBLIC_COLAB_GITHUB_BRANCH: ${NEXT_PUBLIC_COLAB_GITHUB_BRANCH:-main}
     restart: unless-stopped
     networks: [internal]

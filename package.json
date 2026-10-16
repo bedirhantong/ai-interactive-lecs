@@ -1,6 +1,11 @@
 {
   "name": "ai-atolye",
   "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bedirhantong/ai-interactive-lecs.git"
+  },
   "description": "AI Atölye: interactive AI lab for students in Türkiye. Convenience scripts; each app has its own toolchain.",
   "scripts": {
     "dev": "npm --prefix apps/web run dev",
