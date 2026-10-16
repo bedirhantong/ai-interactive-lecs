@@ -3,12 +3,12 @@
 #   docker build -f apps/web/Dockerfile -t ai-atolye-web .
 # NEXT_PUBLIC_* values are compiled into the client bundle, so they are build arguments.
 
-FROM node:24-slim AS deps
+FROM node:25-slim AS deps
 WORKDIR /repo/apps/web
 COPY apps/web/package.json apps/web/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 
-FROM node:24-slim AS build
+FROM node:25-slim AS build
 ARG NEXT_PUBLIC_COLAB_GITHUB_REPO="bedirhantong/ai-interactive-lecs"
 ARG NEXT_PUBLIC_COLAB_GITHUB_BRANCH="main"
 ARG NEXT_PUBLIC_PYODIDE_INDEX_URL="https://cdn.jsdelivr.net/pyodide/v314.0.7/full/"
@@ -22,7 +22,7 @@ COPY apps/web apps/web
 COPY content content
 RUN cd apps/web && npx next build
 
-FROM node:24-slim AS runtime
+FROM node:25-slim AS runtime
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 WORKDIR /app
 # Standalone output: server + traced dependencies + /content (lessons), then static assets.
