@@ -1,0 +1,15 @@
+{
+  "id": "ayran-satislari",
+  "title": "Kantin ayran satışları",
+  "description": "Bir okul kantininde 30 gün boyunca kaydedilen hava sıcaklığı ve satılan ayran sayısı.",
+  "file": "ayran-satislari.csv",
+  "synthetic": true,
+  "provenance": "Bu veri seti eğitim amacıyla bilgisayarla üretilmiştir (scripts/generate_datasets.py). Gerçek bir kantinin satışları değildir.",
+  "task": "regression",
+  "idColumn": "id",
+  "target": "ayran",
+  "features": [
+    { "key": "sicaklik", "label": "Sıcaklık", "unit": "°C", "description": "O günün en yüksek hava sıcaklığı." },
+    { "key": "ayran", "label": "Satılan ayran", "unit": "adet", "description": "O gün satılan ayran sayısı." }
+  ]
+}

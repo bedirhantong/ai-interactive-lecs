@@ -1,0 +1,297 @@
+{
+  "id": "geri-donusum-kasif",
+  "version": 1,
+  "title": "Akıllı Geri Dönüşüm Makinesi: Kâşif",
+  "summary": "Atıkları etiketle, komşulara bakarak tahmin et, modelini eğit ve hatalarını incele. Kod gerekmez.",
+  "level": "explorer",
+  "labs": [
+    "visual"
+  ],
+  "estimatedMinutes": 30,
+  "projectId": "akilli-geri-donusum",
+  "objectives": [
+    "Veri, özellik ve etiket kavramlarını örneklerle açıklamak",
+    "Bir modelin komşu örneklere bakarak nasıl tahmin yaptığını görmek",
+    "Modeli eğitip daha önce görmediği örneklerle test etmek",
+    "Modelin hatalarını inceleyip nedenini açıklamak"
+  ],
+  "datasets": [
+    "geri-donusum"
+  ],
+  "concepts": [
+    {
+      "term": "Özellik",
+      "definition": "Modelin baktığı ölçüm. Örneğin şeffaflık ya da esneklik."
+    },
+    {
+      "term": "Etiket",
+      "definition": "Bir örneğin doğru cevabı. Burada malzeme türü: plastik, cam, metal ya da kâğıt."
+    },
+    {
+      "term": "Eğitim verisi",
+      "definition": "Modelin öğrenmek için kullandığı etiketli örnekler."
+    },
+    {
+      "term": "Test verisi",
+      "definition": "Modelin eğitimde hiç görmediği örnekler. Modelin gerçekten öğrenip öğrenmediğini bunlarla ölçeriz."
+    },
+    {
+      "term": "K-en yakın komşu (KNN)",
+      "definition": "Yeni bir örneği, ona en çok benzeyen K eğitim örneğinin çoğunluğuna göre sınıflandıran yöntem."
+    },
+    {
+      "term": "Doğruluk",
+      "definition": "Test örneklerinin yüzde kaçının doğru tahmin edildiği."
+    }
+  ],
+  "cells": [
+    {
+      "id": "problem",
+      "type": "explanation",
+      "section": "Problem",
+      "markdown": [
+        "## Makineye malzemeleri tanıtalım",
+        "",
+        "Bir geri dönüşüm makinesi, içine atılan nesneyi **sensörleriyle** ölçüyor: ne kadar ağır, ışığı geçiriyor mu, bükülüyor mu, elektriği iletiyor mu?",
+        "",
+        "Senin görevin, makinenin bu ölçümlere bakarak nesnenin **plastik, cam, metal ya da kâğıt** olduğunu tahmin etmesini sağlamak."
+      ]
+    },
+    {
+      "type": "explanation",
+      "variant": "data",
+      "section": "Problem",
+      "markdown": [
+        "**Veri hakkında:** Bu veri seti eğitim amacıyla bilgisayarla üretilmiştir (sentetik). Ölçümler gerçek bir makineden gelmez.",
+        "Model **fotoğraf görmez**; yalnızca ağırlık, şeffaflık, esneklik ve iletkenlik sayılarını kullanır. Bu proje görüntü tanıma değil, sayısal ölçümlerle sınıflandırmadır."
+      ],
+      "id": "veri-notu"
+    },
+    {
+      "id": "veri-gezintisi",
+      "type": "dataset",
+      "section": "Veriyi tanı",
+      "title": "Atık ölçümleri",
+      "datasetId": "geri-donusum",
+      "instructions": "Tabloyu **şeffaflığa** göre sırala. En şeffaf nesneler hangi malzemeden? Sonra malzemeye göre filtrele.",
+      "columns": [
+        "nesne",
+        "seffaflik",
+        "esneklik",
+        "iletkenlik",
+        "agirlik_g",
+        "malzeme"
+      ]
+    },
+    {
+      "id": "once-sen-tahmin-et",
+      "type": "challenge",
+      "section": "Veriyi tanı",
+      "title": "Önce sen tahmin et",
+      "required": true,
+      "skills": [
+        "siniflandirma"
+      ],
+      "instructions": "Nesnelerin adını bilmiyorsun; yalnızca sensör ölçümlerini görüyorsun. **Bir tahminde bulun:** her biri hangi malzeme?",
+      "challenge": {
+        "kind": "prediction",
+        "datasetId": "geri-donusum",
+        "items": [
+          {
+            "rowId": 8,
+            "explanation": "Bu bir reçel kavanozu. Çok şeffaf ve hiç bükülmüyor: cam için tipik."
+          },
+          {
+            "rowId": 35,
+            "explanation": "Bu bir su şişesi. Şeffaf ama esnek: plastik."
+          },
+          {
+            "rowId": 17,
+            "explanation": "Bu bir gazete. Işık geçirmiyor, esnek ve elektrik iletmiyor: kâğıt."
+          },
+          {
+            "rowId": 14,
+            "explanation": "Bu bir alüminyum folyo! Kâğıt kadar esnek ve ışık geçirmiyor; onu metal yapan tek şey yüksek iletkenliği. Bu nesne, modeli de zorlayacak."
+          }
+        ]
+      },
+      "hints": [
+        "Şeffaflık yüksekse nesne cam ya da plastik olabilir. Esnekliğe bak.",
+        "İletkenlik çok yüksekse büyük ihtimalle metaldir."
+      ]
+    },
+    {
+      "id": "etiketle",
+      "type": "dataset",
+      "section": "Etiketle",
+      "title": "Örnekleri etiketle",
+      "required": true,
+      "skills": [
+        "veri-ve-etiketler"
+      ],
+      "datasetId": "geri-donusum",
+      "instructions": [
+        "Bir modelin öğrenebilmesi için **etiketli** örneklere ihtiyacı vardır. Aşağıdaki 8 nesneyi sen etiketle.",
+        "",
+        "Dikkat: Verdiğin etiketler bu defterde modeli eğitmek için **gerçekten** kullanılacak. Yanlış etiket, modelin yanlış öğrenmesine yol açabilir."
+      ],
+      "columns": [
+        "nesne",
+        "seffaflik",
+        "esneklik",
+        "iletkenlik",
+        "agirlik_g"
+      ],
+      "showDistribution": false,
+      "labeling": {
+        "rowIds": [
+          0,
+          3,
+          5,
+          6,
+          13,
+          21,
+          27,
+          28
+        ]
+      },
+      "hints": [
+        "Nesnenin adını oku: günlük hayatta bu nesne hangi kutuya atılır?",
+        "Alüminyum folyo ince ve esnek olsa da bir metaldir."
+      ]
+    },
+    {
+      "id": "komsular",
+      "type": "explanation",
+      "section": "Komşulara bak",
+      "markdown": [
+        "## Komşuna bak, tahmin et",
+        "",
+        "Modelimiz **K-en yakın komşu (KNN)** yöntemini kullanıyor. Fikir çok basit:",
+        "",
+        "> Yeni bir nesne geldiğinde, ölçümleri ona **en çok benzeyen** K tane eğitim örneğini bul. Çoğunluk hangi malzemeyse tahmin odur.",
+        "",
+        "Aşağıdaki grafikte her nokta bir eğitim örneği. **Gizemli nesneyi** (siyah halka) sürükle ve tahminin nasıl değiştiğini izle."
+      ]
+    },
+    {
+      "id": "komsu-deneyi",
+      "type": "experiment",
+      "section": "Komşulara bak",
+      "title": "Gizemli nesne",
+      "required": true,
+      "skills": [
+        "siniflandirma"
+      ],
+      "instructions": "Gizemli nesneyi farklı bölgelere sürükle. **K** değerini 1'den 9'a çıkar. Hangi bölgelerde tahmin kararsız kalıyor?",
+      "experiment": {
+        "kind": "knn-2d",
+        "datasetId": "geri-donusum",
+        "features": [
+          "seffaflik",
+          "esneklik"
+        ],
+        "k": {
+          "min": 1,
+          "max": 15,
+          "step": 2,
+          "initial": 3
+        },
+        "probe": {
+          "x": 5,
+          "y": 55
+        },
+        "showBoundaryByDefault": false
+      },
+      "showCode": false,
+      "minChanges": 4,
+      "hints": [
+        "Nesneyi sol alt köşeye (şeffaf değil, az esnek) götür. Hangi malzemelerin noktaları orada?",
+        "Bölgeleri göster düğmesi, modelin her noktada ne tahmin edeceğini renklerle gösterir."
+      ]
+    },
+    {
+      "id": "egit",
+      "type": "training",
+      "section": "Eğit ve test et",
+      "title": "Modelini eğit",
+      "required": true,
+      "skills": [
+        "model-egitimi",
+        "ozellik-secimi"
+      ],
+      "datasetId": "geri-donusum",
+      "instructions": [
+        "1. Önce yalnızca **şeffaflık** ve **esneklik** ile eğit. Bu senin **A modelin**.",
+        "2. Sonra **iletkenlik** özelliğini de ekleyip tekrar eğit. Bu da **B modelin**.",
+        "",
+        "Model, senin etiketlediğin örnekleri de kullanır. Test için ayrılan örnekleri eğitimde hiç görmez."
+      ],
+      "algorithms": [
+        "knn"
+      ],
+      "featureOptions": [
+        "seffaflik",
+        "esneklik",
+        "iletkenlik"
+      ],
+      "defaultFeatures": [
+        "seffaflik",
+        "esneklik"
+      ],
+      "allowFeatureSelection": true,
+      "allowSplitControl": false,
+      "defaultTestPercent": 25,
+      "k": {
+        "min": 1,
+        "max": 9,
+        "step": 2,
+        "initial": 3
+      },
+      "useStudentLabels": true,
+      "completion": {
+        "kind": "compared",
+        "minRuns": 2
+      },
+      "hints": [
+        "Özellik kutucuklarından iletkenliği işaretleyip yeniden Eğit düğmesine bas.",
+        "İki eğitimin sonuçları aşağıdaki değerlendirme hücresinde yan yana görünür."
+      ]
+    },
+    {
+      "id": "degerlendir",
+      "type": "evaluation",
+      "section": "Eğit ve test et",
+      "title": "Modelin ne öğrendi?",
+      "required": true,
+      "skills": [
+        "model-degerlendirme"
+      ],
+      "sourceCellId": "egit",
+      "instructions": "Sonuçları karşılaştır. Sonra hatalı tahminlerden en az birine tıklayıp incele: model neyi karıştırdı?",
+      "show": [
+        "accuracy",
+        "compare",
+        "mistakes"
+      ],
+      "minInspectedMistakes": 1
+    },
+    {
+      "id": "neden-hata",
+      "type": "reflection",
+      "section": "Düşün",
+      "title": "Sence neden hata yaptı?",
+      "required": true,
+      "skills": [
+        "elestirel-dusunme"
+      ],
+      "prompt": "A modeli bazı metal nesneleri kâğıt sandı. Sence neden? İletkenliği eklemek neden işe yaradı (ya da yaramadı)?",
+      "guidingQuestions": [
+        "Alüminyum folyo ile gazetenin şeffaflık ve esneklik değerleri birbirine benziyor mu?",
+        "Senin etiketlerin modeli etkiledi mi?",
+        "Gerçek bir makinede hangi sensörü eklemek isterdin?"
+      ],
+      "minLength": 60
+    }
+  ]
+}

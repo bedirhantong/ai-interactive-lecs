@@ -1,0 +1,335 @@
+{
+  "id": "geri-donusum-yapici",
+  "version": 2,
+  "title": "Akıllı Geri Dönüşüm Makinesi: Yapıcı",
+  "summary": "Özellikleri seç, KNN ve karar ağacını karşılaştır, modelin Python kodunu düzenle, sonra Colab'da daha büyük bir veriyle eğit.",
+  "level": "builder",
+  "labs": [
+    "visual",
+    "python",
+    "colab"
+  ],
+  "estimatedMinutes": 70,
+  "projectId": "akilli-geri-donusum",
+  "objectives": [
+    "Eğitim ve test verisini neden ayırdığımızı açıklamak",
+    "İki farklı algoritmayı ve özellik setini karşılaştırmak",
+    "Karışıklık matrisini okuyup hangi sınıfların karıştığını bulmak",
+    "Görsel modelin Python karşılığını okuyup değiştirmek",
+    "Daha büyük bir veriyle Colab'da model eğitip sonuçları içe aktarmak ve yorumlamak"
+  ],
+  "datasets": [
+    "geri-donusum"
+  ],
+  "concepts": [
+    {
+      "term": "Özellik",
+      "definition": "Modelin baktığı ölçüm. Örneğin şeffaflık ya da esneklik."
+    },
+    {
+      "term": "Etiket",
+      "definition": "Bir örneğin doğru cevabı. Burada malzeme türü: plastik, cam, metal ya da kâğıt."
+    },
+    {
+      "term": "Eğitim verisi",
+      "definition": "Modelin öğrenmek için kullandığı etiketli örnekler."
+    },
+    {
+      "term": "Test verisi",
+      "definition": "Modelin eğitimde hiç görmediği örnekler. Modelin gerçekten öğrenip öğrenmediğini bunlarla ölçeriz."
+    },
+    {
+      "term": "K-en yakın komşu (KNN)",
+      "definition": "Yeni bir örneği, ona en çok benzeyen K eğitim örneğinin çoğunluğuna göre sınıflandıran yöntem."
+    },
+    {
+      "term": "Doğruluk",
+      "definition": "Test örneklerinin yüzde kaçının doğru tahmin edildiği."
+    },
+    {
+      "term": "Karar ağacı",
+      "definition": "Veriyi \"şeffaflık ≤ 20 mi?\" gibi evet/hayır sorularıyla bölen model."
+    },
+    {
+      "term": "Karışıklık matrisi",
+      "definition": "Her gerçek sınıfın hangi sınıf olarak tahmin edildiğini gösteren tablo."
+    },
+    {
+      "term": "Aşırı öğrenme",
+      "definition": "Modelin eğitim verisini ezberleyip yeni verilerde daha kötü çalışması."
+    }
+  ],
+  "cells": [
+    {
+      "id": "problem",
+      "type": "explanation",
+      "section": "Problem",
+      "markdown": [
+        "## Hedef: güvenilir bir sınıflandırıcı",
+        "",
+        "Geri dönüşüm makinesi için bir model seçeceksin. Ama hangisi? **Deneyerek** bulacağız: farklı özellikler, farklı algoritmalar ve farklı ayarlarla modeller eğitip **test verisinde** karşılaştıracaksın.",
+        "",
+        "Hedef: test doğruluğu **en az %95** olan bir model."
+      ]
+    },
+    {
+      "type": "explanation",
+      "variant": "data",
+      "section": "Problem",
+      "markdown": [
+        "**Veri hakkında:** Bu veri seti eğitim amacıyla bilgisayarla üretilmiştir (sentetik). Ölçümler gerçek bir makineden gelmez.",
+        "Model **fotoğraf görmez**; yalnızca ağırlık, şeffaflık, esneklik ve iletkenlik sayılarını kullanır. Bu proje görüntü tanıma değil, sayısal ölçümlerle sınıflandırmadır."
+      ],
+      "id": "veri-notu"
+    },
+    {
+      "id": "veri",
+      "type": "dataset",
+      "section": "Veri",
+      "title": "Veri seti",
+      "datasetId": "geri-donusum",
+      "instructions": "Sınıf dağılımına bak: her malzemeden kaç örnek var? Dengeli bir veri seti mi?"
+    },
+    {
+      "id": "bolme",
+      "type": "explanation",
+      "section": "Veri",
+      "markdown": [
+        "## Neden test verisi ayırırız?",
+        "",
+        "Bir öğrenciyi, çalıştığı soruların **aynısıyla** sınava sokarsan, gerçekten öğrenip öğrenmediğini anlayamazsın. Ezberlemiş olabilir.",
+        "",
+        "Model için de aynısı geçerli. Verinin bir kısmını **test** için ayırırız ve model eğitim sırasında bu örnekleri **hiç görmez**. Eğitim doğruluğu ile test doğruluğu arasındaki fark, modelin ezberleyip ezberlemediğini gösterir."
+      ]
+    },
+    {
+      "id": "egit",
+      "type": "training",
+      "section": "Eğit ve karşılaştır",
+      "title": "Model atölyesi",
+      "required": true,
+      "skills": [
+        "model-egitimi",
+        "ozellik-secimi"
+      ],
+      "datasetId": "geri-donusum",
+      "instructions": [
+        "En az iki model eğit ve karşılaştır. Önerilen deneyler:",
+        "",
+        "- Aynı özelliklerle **KNN** ve **karar ağacı**",
+        "- Karar ağacında derinliği 2'den 6'ya çıkarmak (eğitim ve test doğruluğuna birlikte bak)",
+        "- Özelliklere **iletkenlik** eklemek"
+      ],
+      "algorithms": [
+        "knn",
+        "decision-tree"
+      ],
+      "featureOptions": [
+        "agirlik_g",
+        "seffaflik",
+        "esneklik",
+        "iletkenlik"
+      ],
+      "defaultFeatures": [
+        "seffaflik",
+        "esneklik"
+      ],
+      "allowFeatureSelection": true,
+      "allowSplitControl": true,
+      "defaultTestPercent": 25,
+      "k": {
+        "min": 1,
+        "max": 15,
+        "step": 1,
+        "initial": 3
+      },
+      "maxDepth": {
+        "min": 1,
+        "max": 6,
+        "step": 1,
+        "initial": 2
+      },
+      "showCode": true,
+      "allowEditableCode": true,
+      "completion": {
+        "kind": "compared",
+        "minRuns": 2
+      },
+      "hints": [
+        "Her Eğit tıklaması yeni bir deney kaydı oluşturur. Kayıtlar değerlendirme hücresinde karşılaştırılır.",
+        "Ağırlık değerleri (gram) diğer ölçümlerden çok daha büyük sayılar. KNN'de bu sorun yaratabilir: Ölçekle seçeneğini dene."
+      ]
+    },
+    {
+      "id": "degerlendir",
+      "type": "evaluation",
+      "section": "Eğit ve karşılaştır",
+      "title": "Sonuçları karşılaştır",
+      "required": true,
+      "skills": [
+        "model-degerlendirme"
+      ],
+      "sourceCellId": "egit",
+      "instructions": "Karışıklık matrisinde köşegen dışındaki hücreler hataları gösterir. Hangi iki malzeme en çok karışıyor? Bir hatalı tahmini açıp incele.",
+      "show": [
+        "accuracy",
+        "compare",
+        "confusion",
+        "per-class",
+        "mistakes"
+      ],
+      "minInspectedMistakes": 1
+    },
+    {
+      "id": "hedef",
+      "type": "challenge",
+      "section": "Eğit ve karşılaştır",
+      "title": "Görev: %95 doğruluk",
+      "required": true,
+      "skills": [
+        "ozellik-secimi"
+      ],
+      "instructions": "Model atölyesinde test doğruluğu **en az %95** olan bir model eğit. Hangi değişiklik bu sonuca ulaştırdı?",
+      "challenge": {
+        "kind": "experiment-goal",
+        "targetCellId": "egit",
+        "goal": {
+          "metric": "test-accuracy",
+          "min": 0.95
+        }
+      },
+      "hints": [
+        "Hangi malzemeler karışıyordu? Onları ayırt edebilecek bir ölçüm var mı?",
+        "Metal ve kâğıt şeffaflık ile esneklikte birbirine benziyor. Elektrik iletkenliği farklı mı?",
+        "İletkenliği özelliklere ekle ve yeniden eğit."
+      ]
+    },
+    {
+      "id": "uzaklik-aciklama",
+      "type": "explanation",
+      "section": "Kodun içine bak",
+      "markdown": [
+        "## KNN'in kalbi: uzaklık",
+        "",
+        "Model atölyesinin **Python** sekmesinde KNN'in tüm kodunu görebilirsin. İki nesnenin ne kadar benzediğini ölçen fonksiyon şuna benzer:",
+        "",
+        "$$\\text{uzaklık}(a, b) = \\sqrt{(a_1 - b_1)^2 + (a_2 - b_2)^2 + \\dots}$$",
+        "",
+        "Aşağıdaki görevde bu fonksiyonun eksik satırını sen tamamlayacaksın."
+      ]
+    },
+    {
+      "id": "uzaklik-tamamla",
+      "type": "challenge",
+      "section": "Kodun içine bak",
+      "title": "Görev: uzaklık fonksiyonunu tamamla",
+      "required": true,
+      "skills": [
+        "algoritma-kodlama"
+      ],
+      "instructions": "`uzaklik(a, b)` fonksiyonundaki boşluğu (`___`) doldur. Fonksiyon iki ölçüm listesi arasındaki düz çizgi (Öklid) uzaklığını döndürmeli.",
+      "challenge": {
+        "kind": "code",
+        "starterCode": [
+          "import math",
+          "",
+          "def uzaklik(a, b):",
+          "    toplam = 0",
+          "    for ai, bi in zip(a, b):",
+          "        fark = ai - bi",
+          "        toplam += ___",
+          "    return math.sqrt(toplam)",
+          "",
+          "",
+          "# Gazete ile alüminyum folyo (şeffaflık, esneklik)",
+          "print(uzaklik([3.2, 64.0], [1.0, 68.0]))"
+        ],
+        "tests": [
+          {
+            "name": "uzaklik([0, 0], [3, 4]) sonucu 5",
+            "code": "assert abs(uzaklik([0, 0], [3, 4]) - 5) < 1e-9, f'Beklenen 5, gelen {uzaklik([0, 0], [3, 4])}'"
+          },
+          {
+            "name": "Bir noktanın kendisine uzaklığı 0",
+            "code": "assert uzaklik([7, 2, 9], [7, 2, 9]) == 0"
+          },
+          {
+            "name": "Sıra fark etmez: uzaklik(a, b) == uzaklik(b, a)",
+            "code": "assert abs(uzaklik([1, 5], [4, 1]) - uzaklik([4, 1], [1, 5])) < 1e-9"
+          }
+        ],
+        "solution": [
+          "import math",
+          "",
+          "def uzaklik(a, b):",
+          "    toplam = 0",
+          "    for ai, bi in zip(a, b):",
+          "        fark = ai - bi",
+          "        toplam += fark * fark",
+          "    return math.sqrt(toplam)"
+        ],
+        "followUp": "Yeni görev: `manhattan(a, b)` fonksiyonunu yaz. Farkların karesi yerine mutlak değerlerini topla ve karekök alma."
+      },
+      "hints": [
+        "Formüldeki her terim bir farkın karesi: $(a_1 - b_1)^2$.",
+        "Fark zaten `fark` değişkeninde. Karesini nasıl alırsın?",
+        "`fark * fark` ya da `fark ** 2` yazabilirsin."
+      ]
+    },
+    {
+      "id": "colab-gecis",
+      "type": "explanation",
+      "section": "Colab Lab",
+      "markdown": [
+        "## Daha büyük bir veriyle: Colab Lab",
+        "",
+        "Tarayıcındaki model 160 örnekle eğitildi. Gerçek bir geri dönüşüm hattında veri çok daha fazla ve çok daha **dağınıktır**: sensörler gürültülüdür, bazı nesneler yanlış etiketlenir, cips paketi gibi kafa karıştırıcı nesneler vardır.",
+        "",
+        "Bu aşamada **Google Colab**'da, kendi Google hesabınla çalışan bir defter açacaksın. 2000 örneklik daha gerçekçi bir veriyle KNN, karar ağacı, rastgele orman ve küçük bir yapay sinir ağı eğitecek, sonuçlarını bir rapor dosyası olarak buraya getireceksin.",
+        "",
+        "Yukarıdaki **Model atölyesi** sonuçlarını hatırla: Colab'daki sonuçlarını onlarla karşılaştıracağız."
+      ]
+    },
+    {
+      "id": "colab",
+      "type": "colab",
+      "section": "Colab Lab",
+      "title": "Colab'da eğit, raporunu getir",
+      "required": true,
+      "skills": [
+        "model-egitimi",
+        "model-degerlendirme"
+      ],
+      "templateId": "akilli-geri-donusum-colab",
+      "instructions": [
+        "Defteri aç, hücreleri sırayla çalıştır ve en sonda indirilen **ai-atolye-rapor.json** dosyasını buraya yükle.",
+        "",
+        "Defteri açmak görevi tamamlamaz; görev, defterin ürettiği rapor içe aktarıldığında tamamlanır."
+      ],
+      "compareWithCellId": "egit",
+      "hints": [
+        "Colab'da bir hücreyi çalıştırmak için hücreye tıklayıp Shift + Enter'a bas. Hücreleri yukarıdan aşağıya sırayla çalıştır.",
+        "Rapor dosyası indirilmediyse Colab'ın solundaki Dosyalar (📁) panelinden ai-atolye-rapor.json dosyasını indir.",
+        "Hata alırsan Colab menüsünden Çalışma zamanı > Tümünü çalıştır'ı dene."
+      ]
+    },
+    {
+      "id": "model-secimi",
+      "type": "reflection",
+      "section": "Karar ver",
+      "title": "Hangi modeli seçerdin?",
+      "required": true,
+      "skills": [
+        "elestirel-dusunme",
+        "model-degerlendirme"
+      ],
+      "prompt": "Makineye koymak için hangi modeli seçerdin: tarayıcıda eğittiğin modellerden biri mi, Colab'daki modellerden biri mi? Test doğruluğu, eğitim–doğrulama farkı ve hangi malzemelerin karıştığı hakkında konuşarak açıkla.",
+      "guidingQuestions": [
+        "Eğitim doğruluğu %100 ama doğrulama doğruluğu düşük bir model gördün mü?",
+        "Colab'daki veri daha gürültülüydü. Bu, iki ortamın doğruluklarını doğrudan karşılaştırmayı neden zorlaştırır?",
+        "Hangi hata daha kötü: cam yerine plastik demek mi, metal yerine kâğıt demek mi?"
+      ],
+      "minLength": 80
+    }
+  ]
+}

@@ -1,0 +1,287 @@
+{
+  "id": "python-ilk-adimlar",
+  "version": 1,
+  "title": "Python'a İlk Adımlar",
+  "summary": "Değişkenler, listeler, döngüler ve fonksiyonlar. Tarayıcında çalışan gerçek Python koduyla.",
+  "level": "builder",
+  "labs": [
+    "python"
+  ],
+  "estimatedMinutes": 30,
+  "objectives": [
+    "Python kodunu çalıştırıp çıktısını okumak",
+    "Liste ve döngüyle birden fazla veriyi işlemek",
+    "Kendi fonksiyonunu yazmak ve testlerle doğrulamak",
+    "Hatalı bir kodu bulup düzeltmek"
+  ],
+  "datasets": [],
+  "concepts": [
+    {
+      "term": "Değişken",
+      "definition": "Bir değeri saklamak için verdiğimiz isim. Örneğin: sicaklik = 24"
+    },
+    {
+      "term": "Liste",
+      "definition": "Birden fazla değeri sırayla tutan yapı: [21, 24, 30]"
+    },
+    {
+      "term": "Döngü",
+      "definition": "Aynı işlemi her eleman için tekrar eden yapı: for x in liste:"
+    },
+    {
+      "term": "Fonksiyon",
+      "definition": "Bir işi yapan, adı olan kod parçası. def ile tanımlanır ve return ile sonuç verir."
+    },
+    {
+      "term": "Test",
+      "definition": "Kodun beklenen sonucu verip vermediğini otomatik kontrol eden küçük kod."
+    }
+  ],
+  "cells": [
+    {
+      "id": "tanisma",
+      "type": "explanation",
+      "section": "Başlarken",
+      "markdown": [
+        "## Python ile tanış",
+        "",
+        "Yapay zekâ modellerinin çoğu **Python** ile yazılır. Bu defterdeki kod hücreleri **gerçekten** senin tarayıcında çalışır; sunucuya gönderilmez.",
+        "",
+        "- Bir hücreyi çalıştırmak için **Çalıştır** düğmesine bas ya da **Shift + Enter** kullan.",
+        "- Hücreler aynı Python ortamını paylaşır: bir hücrede tanımladığın değişkeni sonraki hücrede kullanabilirsin.",
+        "- Kodu bozarsan korkma: **Sıfırla** düğmesi başlangıç kodunu geri getirir."
+      ]
+    },
+    {
+      "id": "ilk-kod",
+      "type": "code",
+      "section": "Başlarken",
+      "title": "İlk kodun",
+      "required": true,
+      "skills": [
+        "python-temelleri"
+      ],
+      "instructions": "Kodu çalıştır. Sonra `okul` değişkenini kendi okulunun adıyla değiştirip tekrar çalıştır.",
+      "source": [
+        "okul = \"Atölye Ortaokulu\"",
+        "ogrenci_sayisi = 420",
+        "print(\"Merhaba,\", okul)",
+        "print(\"Kantine her gün yaklaşık\", ogrenci_sayisi // 4, \"öğrenci uğruyor.\")"
+      ],
+      "completion": {
+        "kind": "run-success"
+      },
+      "hints": [
+        "Kodu çalıştırmak için hücrenin altındaki Çalıştır düğmesine bas.",
+        "Metinler tırnak içinde yazılır: \"Benim Okulum\". Tırnakları silmemeye dikkat et."
+      ]
+    },
+    {
+      "id": "listeler",
+      "type": "explanation",
+      "section": "Listeler ve döngüler",
+      "markdown": [
+        "## Birden fazla veri: listeler",
+        "",
+        "Bir hafta boyunca ölçülen sıcaklıkları tek tek değişkene yazmak yerine bir **liste** kullanırız:",
+        "",
+        "```python",
+        "sicakliklar = [21, 24, 30, 27, 19]",
+        "```",
+        "",
+        "`for` döngüsü listedeki her eleman için aynı işlemi yapar. Aşağıdaki hücre toplamı adım adım hesaplıyor."
+      ]
+    },
+    {
+      "id": "dongu",
+      "type": "code",
+      "section": "Listeler ve döngüler",
+      "title": "Döngüyle toplam",
+      "required": true,
+      "skills": [
+        "python-temelleri"
+      ],
+      "instructions": "Çalıştır ve çıktıyı oku. Sonra listeye yeni bir sıcaklık ekleyip toplamın nasıl değiştiğine bak.",
+      "source": [
+        "sicakliklar = [21, 24, 30, 27, 19]",
+        "",
+        "toplam = 0",
+        "for s in sicakliklar:",
+        "    toplam = toplam + s",
+        "    print(\"Şu ana kadar toplam:\", toplam)",
+        "",
+        "print(\"Gün sayısı:\", len(sicakliklar))"
+      ],
+      "completion": {
+        "kind": "run-success"
+      },
+      "hints": [
+        "Döngünün içindeki satırlar 4 boşluk içeride olmalı. Python girintiye çok dikkat eder.",
+        "Listeye eleman eklemek için virgülle ayırarak yaz: [21, 24, 30, 27, 19, 33]"
+      ]
+    },
+    {
+      "id": "ortalama-gorevi",
+      "type": "challenge",
+      "section": "Fonksiyonlar",
+      "title": "Görev: ortalama fonksiyonu",
+      "required": true,
+      "skills": [
+        "python-temelleri"
+      ],
+      "instructions": [
+        "`ortalama(sayilar)` adında bir fonksiyon yaz. Fonksiyon bir sayı listesi alsın ve **ortalamasını** döndürsün (`return`).",
+        "",
+        "Ortalama = toplam ÷ eleman sayısı. Bu görevde hazır `sum()` fonksiyonunu kullanabilirsin."
+      ],
+      "challenge": {
+        "kind": "code",
+        "starterCode": [
+          "def ortalama(sayilar):",
+          "    # Buraya kodunu yaz",
+          "    pass",
+          "",
+          "",
+          "print(ortalama([21, 24, 30, 27, 19]))"
+        ],
+        "tests": [
+          {
+            "name": "ortalama([1, 2, 3]) sonucu 2 olmalı",
+            "code": "assert ortalama([1, 2, 3]) == 2, f'Beklenen 2, gelen {ortalama([1, 2, 3])}'"
+          },
+          {
+            "name": "Tek elemanlı liste: ortalama([10]) sonucu 10 olmalı",
+            "code": "assert ortalama([10]) == 10, f'Beklenen 10, gelen {ortalama([10])}'"
+          },
+          {
+            "name": "Ondalıklı sayılarla da çalışmalı",
+            "code": "assert abs(ortalama([2.5, 3.5, 6]) - 4) < 1e-9, 'Ondalıklı sayılarda sonuç yanlış'",
+            "hidden": true
+          }
+        ],
+        "solution": [
+          "def ortalama(sayilar):",
+          "    return sum(sayilar) / len(sayilar)"
+        ],
+        "followUp": "Şimdi kendi başına dene: `en_buyuk(sayilar)` fonksiyonunu `max()` kullanmadan, bir döngüyle yaz. Aşağıdaki boş kod hücresinde deneyebilirsin."
+      },
+      "hints": [
+        "Bir fonksiyonun sonuç vermesi için `return` kullanılır. `pass` satırını silip yerine kendi kodunu yaz.",
+        "İki şeye ihtiyacın var: listenin toplamı `sum(sayilar)` ve eleman sayısı `len(sayilar)`.",
+        "Benzer bir örnek: `def iki_kati(x): return x * 2`. Senin fonksiyonun da tek satırda `return ...` ile bitebilir."
+      ]
+    },
+    {
+      "id": "serbest-alan",
+      "type": "code",
+      "section": "Fonksiyonlar",
+      "title": "Serbest alan",
+      "instructions": "Burası senin. Yukarıdaki ek görevi dene ya da istediğin kodu yaz.",
+      "source": [
+        "def en_buyuk(sayilar):",
+        "    # Döngüyle en büyük sayıyı bul",
+        "    pass",
+        "",
+        "print(en_buyuk([4, 17, 9, 12]))"
+      ]
+    },
+    {
+      "id": "kosullar",
+      "type": "explanation",
+      "section": "Hata ayıklama",
+      "markdown": [
+        "## Koşullar: bilgisayara karar verdirmek",
+        "",
+        "`if` / `elif` / `else` ile programın farklı durumlarda farklı davranmasını sağlarız. Aşağıdaki görevde kantin görevlisi için yazılmış bir **kural** var: sıcaklığa göre kaç kasa ayran hazırlanacağını söylüyor.",
+        "",
+        "Ama kodu yazan kişi bir hata yapmış. Testleri çalıştır, hangi durumun yanlış olduğunu bul ve düzelt."
+      ]
+    },
+    {
+      "id": "hatayi-bul",
+      "type": "challenge",
+      "section": "Hata ayıklama",
+      "title": "Görev: hatayı bul",
+      "required": true,
+      "skills": [
+        "hata-ayiklama"
+      ],
+      "instructions": [
+        "`kasa_sayisi(sicaklik)` fonksiyonu şu kuralı uygulamalı:",
+        "",
+        "| Sıcaklık | Kasa |",
+        "|---|---|",
+        "| 30 °C ve üstü | 5 |",
+        "| 20 °C ile 29 °C arası | 3 |",
+        "| 20 °C'nin altı | 1 |",
+        "",
+        "Önce **Kontrol et** ile testleri çalıştır ve hangi testin başarısız olduğunu oku."
+      ],
+      "challenge": {
+        "kind": "code",
+        "starterCode": [
+          "def kasa_sayisi(sicaklik):",
+          "    if sicaklik > 30:",
+          "        return 5",
+          "    elif sicaklik >= 20:",
+          "        return 3",
+          "    else:",
+          "        return 1",
+          "",
+          "",
+          "for derece in [15, 20, 25, 30, 35]:",
+          "    print(derece, \"°C ->\", kasa_sayisi(derece), \"kasa\")"
+        ],
+        "tests": [
+          {
+            "name": "15 °C için 1 kasa",
+            "code": "assert kasa_sayisi(15) == 1, f'15 °C için 1 bekleniyordu, gelen {kasa_sayisi(15)}'"
+          },
+          {
+            "name": "25 °C için 3 kasa",
+            "code": "assert kasa_sayisi(25) == 3, f'25 °C için 3 bekleniyordu, gelen {kasa_sayisi(25)}'"
+          },
+          {
+            "name": "Tam 30 °C için 5 kasa",
+            "code": "assert kasa_sayisi(30) == 5, f'30 °C için 5 bekleniyordu, gelen {kasa_sayisi(30)}'"
+          },
+          {
+            "name": "Tam 20 °C için 3 kasa",
+            "code": "assert kasa_sayisi(20) == 3, f'20 °C için 3 bekleniyordu, gelen {kasa_sayisi(20)}'"
+          }
+        ],
+        "solution": [
+          "def kasa_sayisi(sicaklik):",
+          "    if sicaklik >= 30:",
+          "        return 5",
+          "    elif sicaklik >= 20:",
+          "        return 3",
+          "    else:",
+          "        return 1"
+        ],
+        "followUp": "Yeni kural: 35 °C ve üstünde 7 kasa hazırlansın. Fonksiyonu bu kurala göre genişlet ve 36 °C için dene."
+      },
+      "hints": [
+        "Hangi test başarısız oldu? Sınırdaki değerlere (tam 20, tam 30) dikkat et.",
+        "`>` ile `>=` arasındaki fark: `30 > 30` yanlıştır (False), `30 >= 30` doğrudur (True).",
+        "İlk `if` satırındaki karşılaştırma işaretini incele."
+      ]
+    },
+    {
+      "id": "dusun",
+      "type": "reflection",
+      "section": "Düşün",
+      "title": "Kuralı kim yazdı?",
+      "required": true,
+      "skills": [
+        "elestirel-dusunme"
+      ],
+      "prompt": "Bu derste ayran kasası kuralını bir insan yazdı. Bir yapay zekâ modeli ise kuralı geçmiş verilerden kendisi çıkarır. Sence kantin için hangisi daha iyi olurdu? Neden?",
+      "guidingQuestions": [
+        "İnsanın yazdığı kural hangi durumlarda yanlış olabilir?",
+        "Model kuralı öğrenmek için hangi verilere ihtiyaç duyar?"
+      ],
+      "minLength": 60
+    }
+  ]
+}

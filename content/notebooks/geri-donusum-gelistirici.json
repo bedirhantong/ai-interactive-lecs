@@ -1,0 +1,472 @@
+{
+  "id": "geri-donusum-gelistirici",
+  "version": 2,
+  "title": "Akıllı Geri Dönüşüm Makinesi: Geliştirici",
+  "summary": "Veriyi Python'da yükle, KNN'i sıfırdan yaz, sonra Colab'da daha büyük bir veriyle hazır modellerle karşılaştır.",
+  "level": "developer",
+  "labs": [
+    "python",
+    "colab"
+  ],
+  "estimatedMinutes": 80,
+  "projectId": "akilli-geri-donusum",
+  "objectives": [
+    "CSV verisini Python'da okuyup özellik ve etiketleri ayırmak",
+    "K-en yakın komşu algoritmasını sıfırdan yazmak",
+    "Modeli test verisinde doğruluk ve karışıklık matrisiyle değerlendirmek",
+    "Özellik seçimiyle modeli iyileştirip sonucu açıklamak",
+    "Colab'da daha büyük bir veriyle modelleri karşılaştırıp test sonucunu raporlamak"
+  ],
+  "datasets": [
+    "geri-donusum"
+  ],
+  "concepts": [
+    {
+      "term": "Özellik",
+      "definition": "Modelin baktığı ölçüm. Örneğin şeffaflık ya da esneklik."
+    },
+    {
+      "term": "Etiket",
+      "definition": "Bir örneğin doğru cevabı. Burada malzeme türü: plastik, cam, metal ya da kâğıt."
+    },
+    {
+      "term": "Eğitim verisi",
+      "definition": "Modelin öğrenmek için kullandığı etiketli örnekler."
+    },
+    {
+      "term": "Test verisi",
+      "definition": "Modelin eğitimde hiç görmediği örnekler. Modelin gerçekten öğrenip öğrenmediğini bunlarla ölçeriz."
+    },
+    {
+      "term": "K-en yakın komşu (KNN)",
+      "definition": "Yeni bir örneği, ona en çok benzeyen K eğitim örneğinin çoğunluğuna göre sınıflandıran yöntem."
+    },
+    {
+      "term": "Doğruluk",
+      "definition": "Test örneklerinin yüzde kaçının doğru tahmin edildiği."
+    },
+    {
+      "term": "Karışıklık matrisi",
+      "definition": "Her gerçek sınıfın hangi sınıf olarak tahmin edildiğini gösteren tablo."
+    },
+    {
+      "term": "Veri sızıntısı",
+      "definition": "Test bilgisinin ya da cevabın kendisinin eğitime karışması. Sonuçları olduğundan iyi gösterir."
+    }
+  ],
+  "cells": [
+    {
+      "id": "problem",
+      "type": "explanation",
+      "section": "Problem",
+      "markdown": [
+        "## Makinenin beynini sıfırdan yaz",
+        "",
+        "Bu modda hazır bir kütüphane kullanmayacaksın. **K-en yakın komşu** sınıflandırıcısını saf Python ile kendin yazacak, eğitecek ve değerlendireceksin.",
+        "",
+        "Veri dosyası Python ortamına hazır yüklendi: `/data/geri-donusum.csv`"
+      ]
+    },
+    {
+      "type": "explanation",
+      "variant": "data",
+      "section": "Problem",
+      "markdown": [
+        "**Veri hakkında:** Bu veri seti eğitim amacıyla bilgisayarla üretilmiştir (sentetik). Ölçümler gerçek bir makineden gelmez.",
+        "Model **fotoğraf görmez**; yalnızca ağırlık, şeffaflık, esneklik ve iletkenlik sayılarını kullanır. Bu proje görüntü tanıma değil, sayısal ölçümlerle sınıflandırmadır."
+      ],
+      "id": "veri-notu"
+    },
+    {
+      "id": "yukle",
+      "type": "code",
+      "section": "Veriyi hazırla",
+      "title": "Veriyi yükle",
+      "required": true,
+      "skills": [
+        "python-temelleri"
+      ],
+      "instructions": "Çalıştır. Sonra her malzemeden kaç örnek olduğunu sayan kodu ekle.",
+      "source": [
+        "import csv",
+        "",
+        "with open(\"/data/geri-donusum.csv\", encoding=\"utf-8\") as dosya:",
+        "    satirlar = list(csv.DictReader(dosya))",
+        "",
+        "OZELLIK_ADLARI = [\"agirlik_g\", \"seffaflik\", \"esneklik\", \"iletkenlik\"]",
+        "",
+        "veri = []",
+        "for s in satirlar:",
+        "    veri.append({",
+        "        \"no\": int(s[\"id\"]),",
+        "        \"nesne\": s[\"nesne\"],",
+        "        \"olcumler\": {ad: float(s[ad]) for ad in OZELLIK_ADLARI},",
+        "        \"malzeme\": s[\"malzeme\"],",
+        "    })",
+        "",
+        "print(\"Örnek sayısı:\", len(veri))",
+        "print(\"İlk örnek:\", veri[0])",
+        "",
+        "sayac = {}",
+        "for ornek in veri:",
+        "    sayac[ornek[\"malzeme\"]] = sayac.get(ornek[\"malzeme\"], 0) + 1",
+        "print(\"Malzeme dağılımı:\", sayac)"
+      ],
+      "completion": {
+        "kind": "output-match",
+        "pattern": "Malzeme dağılımı",
+        "description": "Kod malzeme dağılımını yazdırmalı."
+      },
+      "hints": [
+        "Hücre zaten çalışır durumda. Önce olduğu gibi çalıştır, çıktıyı oku."
+      ]
+    },
+    {
+      "id": "bol",
+      "type": "code",
+      "section": "Veriyi hazırla",
+      "title": "Eğitim ve test",
+      "required": true,
+      "skills": [
+        "model-egitimi"
+      ],
+      "instructions": "Bu hücre her örneği numarasına göre sabit bir kuralla eğitim ya da test grubuna koyar. Böylece sonuçlar her çalıştırmada aynı olur.",
+      "source": [
+        "TEST_YUZDESI = 25",
+        "TOHUM = 1",
+        "",
+        "def test_mi(no):",
+        "    karisik = ((no + 1) * 2654435761 + TOHUM * 97) % 4294967296",
+        "    return karisik % 100 < TEST_YUZDESI",
+        "",
+        "egitim = [o for o in veri if not test_mi(o[\"no\"])]",
+        "test = [o for o in veri if test_mi(o[\"no\"])]",
+        "print(\"Eğitim:\", len(egitim), \"örnek  |  Test:\", len(test), \"örnek\")"
+      ],
+      "completion": {
+        "kind": "output-match",
+        "pattern": "Eğitim:",
+        "description": "Kod eğitim ve test sayılarını yazdırmalı."
+      },
+      "hints": [
+        "Bu hücre bir önceki hücredeki `veri` değişkenini kullanır. Önce onu çalıştırdığından emin ol."
+      ]
+    },
+    {
+      "id": "uzaklik",
+      "type": "challenge",
+      "section": "KNN'i yaz",
+      "title": "Görev: uzaklık",
+      "required": true,
+      "skills": [
+        "algoritma-kodlama"
+      ],
+      "instructions": "İki ölçüm listesi arasındaki Öklid uzaklığını döndüren `uzaklik(a, b)` fonksiyonunu yaz. `math.sqrt` kullanabilirsin.",
+      "challenge": {
+        "kind": "code",
+        "starterCode": [
+          "import math",
+          "",
+          "def uzaklik(a, b):",
+          "    # a ve b aynı uzunlukta sayı listeleri",
+          "    pass",
+          "",
+          "",
+          "print(uzaklik([0, 0], [3, 4]))  # 5.0 olmalı"
+        ],
+        "tests": [
+          {
+            "name": "uzaklik([0, 0], [3, 4]) == 5",
+            "code": "assert abs(uzaklik([0, 0], [3, 4]) - 5) < 1e-9, f'Beklenen 5, gelen {uzaklik([0, 0], [3, 4])}'"
+          },
+          {
+            "name": "Üç boyutta çalışmalı",
+            "code": "assert abs(uzaklik([1, 2, 3], [4, 6, 3]) - 5) < 1e-9"
+          },
+          {
+            "name": "Negatif farklarla çalışmalı",
+            "code": "assert abs(uzaklik([5, 5], [2, 1]) - 5) < 1e-9",
+            "hidden": true
+          }
+        ],
+        "solution": [
+          "import math",
+          "",
+          "def uzaklik(a, b):",
+          "    return math.sqrt(sum((ai - bi) ** 2 for ai, bi in zip(a, b)))"
+        ],
+        "followUp": "Ek görev: fonksiyonun, farklı uzunlukta listeler gelirse anlamlı bir hata (`ValueError`) vermesini sağla."
+      },
+      "hints": [
+        "Formül: her boyuttaki farkın karesini topla, toplamın karekökünü al.",
+        "`zip(a, b)` iki listeyi eleman eleman birlikte dolaşır.",
+        "Benzer örnek: `sum(x * x for x in liste)` bir listenin kareler toplamını verir."
+      ]
+    },
+    {
+      "id": "knn",
+      "type": "challenge",
+      "section": "KNN'i yaz",
+      "title": "Görev: KNN tahmini",
+      "required": true,
+      "skills": [
+        "algoritma-kodlama",
+        "siniflandirma"
+      ],
+      "instructions": [
+        "`knn_tahmin(egitim_x, egitim_y, x, k)` fonksiyonunu yaz:",
+        "",
+        "1. `x` ile her eğitim örneği arasındaki uzaklığı hesapla.",
+        "2. En yakın `k` örneği bul.",
+        "3. Bu komşuların etiketleri arasında en çok tekrar edeni döndür.",
+        "",
+        "Bu görevde `uzaklik` fonksiyonu senin için hazır."
+      ],
+      "challenge": {
+        "kind": "code",
+        "starterCode": [
+          "import math",
+          "",
+          "def uzaklik(a, b):",
+          "    return math.sqrt(sum((ai - bi) ** 2 for ai, bi in zip(a, b)))",
+          "",
+          "def knn_tahmin(egitim_x, egitim_y, x, k):",
+          "    # 1) (uzaklık, etiket) çiftlerini hazırla",
+          "    # 2) uzaklığa göre sırala ve ilk k tanesini al",
+          "    # 3) en çok tekrar eden etiketi döndür",
+          "    pass",
+          "",
+          "",
+          "egitim_x = [[0, 0], [1, 0], [10, 10], [9, 10]]",
+          "egitim_y = [\"kagit\", \"kagit\", \"cam\", \"cam\"]",
+          "print(knn_tahmin(egitim_x, egitim_y, [2, 1], k=3))  # kagit olmalı"
+        ],
+        "tests": [
+          {
+            "name": "Yakındaki iki kâğıt örneği kazanmalı",
+            "code": "assert knn_tahmin([[0, 0], [1, 0], [10, 10], [9, 10]], ['kagit', 'kagit', 'cam', 'cam'], [2, 1], 3) == 'kagit'"
+          },
+          {
+            "name": "k=1 iken en yakın tek komşunun etiketi",
+            "code": "assert knn_tahmin([[0, 0], [5, 5]], ['metal', 'cam'], [4, 4], 1) == 'cam'"
+          },
+          {
+            "name": "Uzaktaki çoğunluk değil, yakın komşular sayılmalı",
+            "code": "x = [[0, 0], [0, 1], [50, 50], [50, 51], [51, 50]]\ny = ['metal', 'metal', 'cam', 'cam', 'cam']\nassert knn_tahmin(x, y, [1, 1], 2) == 'metal', 'Sadece en yakın k komşu oy vermeli'"
+          },
+          {
+            "name": "Gerçek veriyle tutarlı tahmin",
+            "code": "assert knn_tahmin([[85, 4], [80, 72], [2, 65]], ['cam', 'plastik', 'kagit'], [88, 5], 1) == 'cam'",
+            "hidden": true
+          }
+        ],
+        "solution": [
+          "def knn_tahmin(egitim_x, egitim_y, x, k):",
+          "    ciftler = [(uzaklik(ex, x), ey) for ex, ey in zip(egitim_x, egitim_y)]",
+          "    ciftler.sort(key=lambda c: c[0])",
+          "    komsular = [etiket for _, etiket in ciftler[:k]]",
+          "    return max(set(komsular), key=komsular.count)"
+        ],
+        "followUp": "Ek görev: oylar eşit olduğunda en yakın komşunun etiketini seçecek şekilde fonksiyonu geliştir."
+      },
+      "hints": [
+        "Önce bir liste kur: `[(uzaklik(ex, x), ey) for ex, ey in zip(egitim_x, egitim_y)]`.",
+        "Listeyi `sort(key=lambda c: c[0])` ile uzaklığa göre sırala, `[:k]` ile ilk k tanesini al.",
+        "En çok tekrar edeni bulmak için bir sözlükte say ya da `max(set(liste), key=liste.count)` kullan."
+      ]
+    },
+    {
+      "id": "degerlendir",
+      "type": "code",
+      "section": "Değerlendir",
+      "title": "Test doğruluğu ve karışıklık",
+      "required": true,
+      "skills": [
+        "model-degerlendirme"
+      ],
+      "instructions": "Bu hücre senin `knn_tahmin` fonksiyonunu kullanır (görevi geçtiğinde ortam paylaşılır). Çalıştır ve hangi malzemelerin karıştığına bak.",
+      "source": [
+        "OZELLIKLER = [\"seffaflik\", \"esneklik\"]",
+        "K = 3",
+        "",
+        "def vektor(ornek):",
+        "    return [ornek[\"olcumler\"][ad] for ad in OZELLIKLER]",
+        "",
+        "egitim_x = [vektor(o) for o in egitim]",
+        "egitim_y = [o[\"malzeme\"] for o in egitim]",
+        "",
+        "dogru = 0",
+        "karisiklik = {}",
+        "for o in test:",
+        "    tahmin = knn_tahmin(egitim_x, egitim_y, vektor(o), K)",
+        "    if tahmin == o[\"malzeme\"]:",
+        "        dogru += 1",
+        "    else:",
+        "        anahtar = o[\"malzeme\"] + \" -> \" + tahmin",
+        "        karisiklik[anahtar] = karisiklik.get(anahtar, 0) + 1",
+        "",
+        "print(f\"Test doğruluğu: {dogru}/{len(test)} = {dogru / len(test):.1%}\")",
+        "print(\"Hatalar (gerçek -> tahmin):\", karisiklik)"
+      ],
+      "completion": {
+        "kind": "output-match",
+        "pattern": "Test doğruluğu",
+        "description": "Kod test doğruluğunu yazdırmalı."
+      },
+      "hints": [
+        "NameError: knn_tahmin alırsan, önce KNN görevini Kontrol et ile geçmelisin.",
+        "NameError: egitim alırsan, Eğitim ve test hücresini tekrar çalıştır."
+      ]
+    },
+    {
+      "id": "iyilestir",
+      "type": "challenge",
+      "section": "İyileştir",
+      "title": "Görev: modeli iyileştir",
+      "required": true,
+      "skills": [
+        "ozellik-secimi",
+        "model-degerlendirme"
+      ],
+      "instructions": [
+        "Yalnızca `OZELLIKLER` ve `K` ayarlarını değiştirerek test doğruluğunu **en az %95**'e çıkar.",
+        "",
+        "Kural: `malzeme` sütunu bir özellik olamaz. O, tahmin etmeye çalıştığımız cevabın kendisi; onu kullanmak **veri sızıntısı** olur."
+      ],
+      "challenge": {
+        "kind": "code",
+        "starterCode": [
+          "OZELLIKLER = [\"seffaflik\", \"esneklik\"]",
+          "K = 3",
+          "",
+          "# --- Aşağısı hazır: veriyi yükler, modeli değerlendirir ---",
+          "import csv, math",
+          "",
+          "with open(\"/data/geri-donusum.csv\", encoding=\"utf-8\") as dosya:",
+          "    satirlar = list(csv.DictReader(dosya))",
+          "",
+          "def test_mi(no):",
+          "    return ((no + 1) * 2654435761 + 97) % 4294967296 % 100 < 25",
+          "",
+          "def uzaklik(a, b):",
+          "    return math.sqrt(sum((ai - bi) ** 2 for ai, bi in zip(a, b)))",
+          "",
+          "def knn_tahmin(egitim_x, egitim_y, x, k):",
+          "    ciftler = sorted(zip(egitim_x, egitim_y), key=lambda c: uzaklik(c[0], x))[:k]",
+          "    etiketler = [e for _, e in ciftler]",
+          "    return max(set(etiketler), key=etiketler.count)",
+          "",
+          "def dogruluk_hesapla(ozellikler, k):",
+          "    ex, ey, tx, ty = [], [], [], []",
+          "    for s in satirlar:",
+          "        x = [float(s[o]) for o in ozellikler]",
+          "        if test_mi(int(s[\"id\"])):",
+          "            tx.append(x); ty.append(s[\"malzeme\"])",
+          "        else:",
+          "            ex.append(x); ey.append(s[\"malzeme\"])",
+          "    dogru = sum(knn_tahmin(ex, ey, x, k) == y for x, y in zip(tx, ty))",
+          "    return dogru / len(tx)",
+          "",
+          "print(f\"Test doğruluğu: {dogruluk_hesapla(OZELLIKLER, K):.1%}\")"
+        ],
+        "tests": [
+          {
+            "name": "Yalnızca izin verilen ölçümler kullanılmalı",
+            "code": "izinli = {'agirlik_g', 'seffaflik', 'esneklik', 'iletkenlik'}\nassert set(OZELLIKLER) <= izinli, f'İzin verilmeyen özellik: {set(OZELLIKLER) - izinli}'\nassert len(OZELLIKLER) >= 1"
+          },
+          {
+            "name": "K pozitif bir tam sayı olmalı",
+            "code": "assert isinstance(K, int) and K >= 1"
+          },
+          {
+            "name": "Test doğruluğu en az %95",
+            "code": "d = dogruluk_hesapla(OZELLIKLER, K)\nassert d >= 0.95, f'Test doğruluğu {d:.1%}, hedef %95'"
+          }
+        ],
+        "solution": [
+          "OZELLIKLER = [\"seffaflik\", \"esneklik\", \"iletkenlik\"]",
+          "K = 3"
+        ],
+        "followUp": "Ek görev: dört özelliğin hepsini kullan. Ağırlık (gram) diğerlerinden çok büyük sayılar içeriyor; ölçekleme yapmadan KNN'e ne oluyor? Ölçekleyen bir sürüm yaz."
+      },
+      "hints": [
+        "Değerlendirme hücresindeki hatalara bak: hangi malzemeler karışıyor?",
+        "Metal ile kâğıdı ayırmak için hangi sensör ölçümü işe yarar?",
+        "OZELLIKLER listesine \"iletkenlik\" ekle."
+      ]
+    },
+    {
+      "id": "numpy",
+      "type": "code",
+      "section": "İyileştir",
+      "title": "İsteğe bağlı: numpy ile",
+      "instructions": "Bu hücre `numpy` paketini kullanır. İlk çalıştırmada paket tarayıcına indirilir, bu biraz sürebilir.",
+      "source": [
+        "import numpy as np",
+        "",
+        "iletkenlik = np.array([o[\"olcumler\"][\"iletkenlik\"] for o in veri])",
+        "malzeme = np.array([o[\"malzeme\"] for o in veri])",
+        "",
+        "for m in [\"plastik\", \"cam\", \"metal\", \"kagit\"]:",
+        "    degerler = iletkenlik[malzeme == m]",
+        "    print(f\"{m:8s} ortalama iletkenlik: {degerler.mean():5.1f}  (en düşük {degerler.min():.1f})\")"
+      ],
+      "completion": {
+        "kind": "run-success"
+      }
+    },
+    {
+      "id": "colab-gecis",
+      "type": "explanation",
+      "section": "Colab Lab",
+      "markdown": [
+        "## Daha büyük bir veriyle: Colab Lab",
+        "",
+        "Tarayıcındaki model 160 örnekle eğitildi. Gerçek bir geri dönüşüm hattında veri çok daha fazla ve çok daha **dağınıktır**: sensörler gürültülüdür, bazı nesneler yanlış etiketlenir, cips paketi gibi kafa karıştırıcı nesneler vardır.",
+        "",
+        "Bu aşamada **Google Colab**'da, kendi Google hesabınla çalışan bir defter açacaksın. 2000 örneklik daha gerçekçi bir veriyle KNN, karar ağacı, rastgele orman ve küçük bir yapay sinir ağı eğitecek, sonuçlarını bir rapor dosyası olarak buraya getireceksin.",
+        "",
+        "Kendi yazdığın KNN'i Colab'da scikit-learn'ün hazır modelleriyle karşılaştıracaksın."
+      ]
+    },
+    {
+      "id": "colab",
+      "type": "colab",
+      "section": "Colab Lab",
+      "title": "Colab'da eğit, raporunu getir",
+      "required": true,
+      "skills": [
+        "model-egitimi",
+        "model-degerlendirme"
+      ],
+      "templateId": "akilli-geri-donusum-colab",
+      "instructions": [
+        "Defteri aç, hücreleri sırayla çalıştır ve en sonda indirilen **ai-atolye-rapor.json** dosyasını buraya yükle.",
+        "",
+        "Defteri açmak görevi tamamlamaz; görev, defterin ürettiği rapor içe aktarıldığında tamamlanır."
+      ],
+      "hints": [
+        "Colab'da bir hücreyi çalıştırmak için hücreye tıklayıp Shift + Enter'a bas. Hücreleri yukarıdan aşağıya sırayla çalıştır.",
+        "Rapor dosyası indirilmediyse Colab'ın solundaki Dosyalar (📁) panelinden ai-atolye-rapor.json dosyasını indir.",
+        "Hata alırsan Colab menüsünden Çalışma zamanı > Tümünü çalıştır'ı dene."
+      ]
+    },
+    {
+      "id": "rapor",
+      "type": "reflection",
+      "section": "Rapor",
+      "title": "Mühendislik raporu",
+      "required": true,
+      "skills": [
+        "elestirel-dusunme",
+        "model-degerlendirme"
+      ],
+      "prompt": "Bir mühendislik raporu gibi yaz: Kendi KNN'inde hangi özellikleri ve K değerini seçtin, test doğruluğun kaç? Colab'da hangi model seçildi ve neden? Model hâlâ hangi nesnelerde hata yapıyor, gerçek bir makinede bu nasıl bir soruna yol açar?",
+      "guidingQuestions": [
+        "Boyalı metal kapaklar neden zor örnekler olabilir?",
+        "Bu veri seti sentetik. Gerçek dünyada sonuçlar neden farklı olabilir?"
+      ],
+      "minLength": 100
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+[
+  { "id": "veri-ve-etiketler", "title": "Veri ve etiketler", "description": "Örnekleri inceleyip doğru etiketleyebilmek ve etiket hatalarının etkisini anlamak." },
+  { "id": "siniflandirma", "title": "Sınıflandırma", "description": "Bir örneğin hangi sınıfa ait olduğunu ölçümlere bakarak tahmin edebilmek." },
+  { "id": "model-egitimi", "title": "Model eğitimi", "description": "Bir modeli veriyle eğitmek ve ayarlarını bilinçli seçmek." },
+  { "id": "model-degerlendirme", "title": "Model değerlendirme", "description": "Test verisiyle doğruluk, karışıklık matrisi ve hatalı tahminleri yorumlamak." },
+  { "id": "ozellik-secimi", "title": "Özellik seçimi", "description": "Hangi ölçümlerin modele gerçekten yardım ettiğini deneyerek bulmak." },
+  { "id": "dogrusal-regresyon", "title": "Doğrusal regresyon", "description": "İki sayısal değişken arasındaki ilişkiyi bir doğruyla modellemek ve hatasını ölçmek." },
+  { "id": "python-temelleri", "title": "Python temelleri", "description": "Değişkenler, listeler, döngüler, koşullar ve fonksiyonlarla çalışan kod yazmak." },
+  { "id": "hata-ayiklama", "title": "Hata ayıklama", "description": "Hatalı kodu okuyup sorunu bulmak ve düzeltmek." },
+  { "id": "algoritma-kodlama", "title": "Algoritmayı kodlama", "description": "Bir makine öğrenmesi algoritmasını Python'da kendin yazmak." },
+  { "id": "elestirel-dusunme", "title": "Eleştirel düşünme", "description": "Modelin davranışını, sınırlarını ve veri sorunlarını kendi sözlerinle açıklamak." }
+]

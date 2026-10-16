@@ -1,0 +1,19 @@
+# Keep the build context small and free of secrets/local state.
+**/.git
+**/node_modules
+**/.next
+**/.venv*
+.venv-notebooks
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+**/test-results
+**/playwright-report
+**/.env
+**/.env.*
+!**/.env.example
+**/*.db
+docs
+apps/api/tests
+apps/web/tests

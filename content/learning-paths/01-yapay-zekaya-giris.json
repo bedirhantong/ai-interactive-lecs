@@ -1,0 +1,19 @@
+{
+  "id": "yapay-zekaya-giris",
+  "order": 1,
+  "title": "Yapay Zekâya Giriş",
+  "description": "Bilgisayarlar örneklerden nasıl öğrenir? Veri, etiket ve tahmin kavramlarını kod yazmadan, deneyerek keşfet.",
+  "levels": ["explorer"],
+  "modules": [
+    {
+      "id": "orneklerden-ogrenme",
+      "title": "Örneklerden öğrenme",
+      "description": "Etiketli örneklerle bir sınıflandırıcı eğit, test et ve hatalarını incele.",
+      "items": [
+        { "kind": "planned", "title": "Yapay zekâ nedir, ne değildir?", "level": "explorer" },
+        { "kind": "lesson", "lessonId": "geri-donusum-kasif" },
+        { "kind": "planned", "title": "Yapay zekânın hataları ve sınırları", "level": "explorer" }
+      ]
+    }
+  ]
+}

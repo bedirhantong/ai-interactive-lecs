@@ -1,0 +1,1607 @@
+{
+  "info": {
+    "name": "AI Atölye API",
+    "description": "Yerel geliştirme için uçtan uca senaryo. Ortam seçmeye gerek yok: adresler koleksiyon değişkenlerinde. Sırayla çalıştır ya da Run collection ile hepsini birden çalıştır. Önce: npm run db:up ve npm run api.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1 · Sistem",
+      "item": [
+        {
+          "name": "Canlılık (live)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health/live",
+            "description": "Süreç ayakta mı? Veritabanına dokunmaz."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"başarılı zarf\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.meta.request_id).to.be.a(\"string\"); });",
+                  "pm.test(\"durum ok\", () => pm.expect(pm.response.json().data.status).to.eql(\"ok\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Hazır olma (ready)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health/ready",
+            "description": "Veritabanı cevap veriyor mu ve şema en son migration'da mı? Değilse 503 döner."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"veritabanı ve migration hazır\", () => pm.expect(pm.response.json().data.status).to.eql(\"ready\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Hata formatı ve istek kimliği",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-request-id",
+                "value": "postman-ornek-istek-1"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/me",
+            "description": "Oturum açmadan önce gönderilir: 401 ve standart hata zarfı {success: false, error: {code, message, request_id}}. Postman önceki çalıştırmalardan kalan çerezi gönderirse kod session_expired olur; bu da doğrudur."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.response.to.have.status(401);",
+                  "pm.test(\"hata zarfı: oturum yok ya da süresi dolmuş\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.error.code).to.be.oneOf([\"not_authenticated\", \"session_expired\"]); });",
+                  "pm.test(\"istek kimliği geri döner\", () => pm.expect(pm.response.headers.get(\"x-request-id\")).to.eql(\"postman-ornek-istek-1\"));",
+                  "pm.test(\"güvenlik başlıkları\", () => pm.expect(pm.response.headers.get(\"x-content-type-options\")).to.eql(\"nosniff\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2 · Öğrenci (demo)",
+      "item": [
+        {
+          "name": "Demo öğrenci oturumu aç",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/demo",
+            "description": "Yalnızca ATOLYE_DEMO_MODE=true iken çalışır. Oturum httpOnly çerezde tutulur.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"student\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"başarılı zarf\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.meta.request_id).to.be.a(\"string\"); });",
+                  "pm.collectionVariables.set(\"studentId\", pm.response.json().data.user.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ben kimim?",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/auth/me",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"öğrenci\", () => pm.expect(pm.response.json().data.role).to.eql(\"student\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CSRF koruması: başlıksız istek reddedilir",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/demo",
+            "description": "x-atolye-client başlığı olmadan durum değiştiren istekler 403 alır.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"student\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"hata kodu csrf_rejected\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.error.code).to.eql(\"csrf_rejected\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Defteri ilk kez kaydet (If-None-Match: *)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "If-None-Match",
+                "value": "*"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/notebooks/python-ilk-adimlar",
+            "description": "İlk kayıt If-None-Match: * ile yapılır. Yanıttaki ETag başlığı bir sonraki kayıtta If-Match olarak gönderilir.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema\": 1,\n  \"lessonId\": \"python-ilk-adimlar\",\n  \"lessonVersion\": 1,\n  \"savedAt\": \"2026-10-16T10:00:00Z\",\n  \"cells\": {\n    \"ilk-kod\": {\n      \"kind\": \"code\",\n      \"source\": \"print('Postman’den merhaba')\"\n    }\n  },\n  \"completions\": {},\n  \"hintLevels\": {},\n  \"evidence\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"başarılı zarf\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(true); pm.expect(b.meta.request_id).to.be.a(\"string\"); });",
+                  "pm.collectionVariables.set(\"notebookEtag\", pm.response.headers.get(\"ETag\"));",
+                  "pm.test(\"sürüm 1\", () => pm.expect(pm.response.json().data.revision).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sürüm başlığı olmadan kayıt reddedilir",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/notebooks/python-ilk-adimlar",
+            "description": "Hiçbir cihaz başka bir cihazın kaydının üzerine yanlışlıkla yazamasın diye.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema\": 1,\n  \"lessonId\": \"python-ilk-adimlar\",\n  \"lessonVersion\": 1,\n  \"savedAt\": \"2026-10-16T10:00:00Z\",\n  \"cells\": {\n    \"ilk-kod\": {\n      \"kind\": \"code\",\n      \"source\": \"print('Postman’den merhaba')\"\n    }\n  },\n  \"completions\": {},\n  \"hintLevels\": {},\n  \"evidence\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 428\", () => pm.response.to.have.status(428));",
+                  "pm.test(\"hata kodu precondition_required\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.error.code).to.eql(\"precondition_required\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Defteri güncelle (If-Match)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "If-Match",
+                "value": "{{notebookEtag}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/notebooks/python-ilk-adimlar",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema\": 1,\n  \"lessonId\": \"python-ilk-adimlar\",\n  \"lessonVersion\": 1,\n  \"savedAt\": \"2026-10-16T10:00:00Z\",\n  \"cells\": {\n    \"ilk-kod\": {\n      \"kind\": \"code\",\n      \"source\": \"print('Postman’den merhaba')\"\n    }\n  },\n  \"completions\": {},\n  \"hintLevels\": {},\n  \"evidence\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"sürüm 2\", () => pm.expect(pm.response.json().data.revision).to.eql(2));",
+                  "pm.collectionVariables.set(\"notebookEtag\", pm.response.headers.get(\"ETag\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eski sürüme dayalı kayıt çakışır (412)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "If-Match",
+                "value": "\"1\""
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/notebooks/python-ilk-adimlar",
+            "description": "Başka bir cihaz arada kaydetmiş gibi: sunucu kaydın üzerine yazmaz, güncel sürümü bildirir.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema\": 1,\n  \"lessonId\": \"python-ilk-adimlar\",\n  \"lessonVersion\": 1,\n  \"savedAt\": \"2026-10-16T10:00:00Z\",\n  \"cells\": {\n    \"ilk-kod\": {\n      \"kind\": \"code\",\n      \"source\": \"print('Postman’den merhaba')\"\n    }\n  },\n  \"completions\": {},\n  \"hintLevels\": {},\n  \"evidence\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 412\", () => pm.response.to.have.status(412));",
+                  "pm.test(\"hata kodu notebook_revision_conflict\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.error.code).to.eql(\"notebook_revision_conflict\"); });",
+                  "pm.test(\"güncel sürüm bildirilir\", () => pm.expect(pm.response.json().error.details[0].current_revision).to.eql(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Defteri getir",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/notebooks/python-ilk-adimlar",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"kod geri geldi\", () => pm.expect(pm.response.json().data.state.cells[\"ilk-kod\"].source).to.include(\"Postman\"));",
+                  "pm.test(\"ETag başlığı\", () => pm.expect(pm.response.headers.get(\"ETag\")).to.eql('\"2\"'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Defterlerim (sürümler)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/notebooks",
+            "description": "Uygulama açılışında hangi defterlerin değiştiğini anlamak için: içerik yok, yalnızca sürümler."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"1 defter, sürüm 2\", () => pm.expect(pm.response.json().data[0].revision).to.eql(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "İlerleme olayları gönder",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/progress/events",
+            "description": "Her olay istemcinin ürettiği bir client_event_id taşır.",
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"client_event_id\": \"pm-olay-0001\",\n    \"lesson_id\": \"python-ilk-adimlar\",\n    \"cell_id\": \"ilk-kod\",\n    \"kind\": \"cell-completed\",\n    \"detail\": \"Kodu hatasız çalıştırdı\",\n    \"occurred_at\": \"2026-10-16T10:00:00Z\"\n  },\n  {\n    \"client_event_id\": \"pm-olay-0002\",\n    \"lesson_id\": \"geri-donusum-yapici\",\n    \"cell_id\": \"egit\",\n    \"kind\": \"model-trained\",\n    \"detail\": \"KNN test %97,5\",\n    \"occurred_at\": \"2026-10-16T10:05:00Z\"\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"2 olay kaydedildi\", () => pm.expect(pm.response.json().data.stored).to.eql(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aynı olayları tekrar gönder (bağlantı koptu)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/progress/events",
+            "description": "Aynı client_event_id ile gelen olaylar ikinci kez kaydedilmez; istemci gönül rahatlığıyla tekrar deneyebilir.",
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"client_event_id\": \"pm-olay-0001\",\n    \"lesson_id\": \"python-ilk-adimlar\",\n    \"cell_id\": \"ilk-kod\",\n    \"kind\": \"cell-completed\",\n    \"detail\": \"Kodu hatasız çalıştırdı\",\n    \"occurred_at\": \"2026-10-16T10:00:00Z\"\n  },\n  {\n    \"client_event_id\": \"pm-olay-0002\",\n    \"lesson_id\": \"geri-donusum-yapici\",\n    \"cell_id\": \"egit\",\n    \"kind\": \"model-trained\",\n    \"detail\": \"KNN test %97,5\",\n    \"occurred_at\": \"2026-10-16T10:05:00Z\"\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"yeni kayıt yok\", () => pm.expect(pm.response.json().data.stored).to.eql(0));",
+                  "pm.test(\"2 tekrar yok sayıldı\", () => pm.expect(pm.response.json().data.duplicates).to.eql(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "İlerleme olaylarını listele (sayfalı)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/progress/events?limit=1",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"sonraki sayfa imleci meta içinde\", () => pm.expect(pm.response.json().meta.pagination.next_cursor).to.not.be.null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Colab raporu yükle (gerçek rapor)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/reports?lesson_id=geri-donusum-yapici",
+            "description": "Bu rapor, Colab defteri gerçekten çalıştırılarak üretildi (scripts/verify_colab_notebook.py).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"1.0\",\n  \"project_id\": \"akilli-geri-donusum\",\n  \"template_id\": \"akilli-geri-donusum-colab\",\n  \"notebook_version\": \"1.0.0\",\n  \"created_at\": \"2026-10-16T05:39:18+00:00\",\n  \"environment\": {\n    \"python\": \"3.14.6\",\n    \"sklearn\": \"1.9.1\",\n    \"accelerator\": \"none\",\n    \"colab\": false,\n    \"runtime_seconds\": 3.6\n  },\n  \"dataset\": {\n    \"name\": \"geri-donusum-gercekci-2000\",\n    \"synthetic\": true,\n    \"n_train\": 1200,\n    \"n_validation\": 400,\n    \"n_test\": 400,\n    \"features\": [\n      \"agirlik_g\",\n      \"seffaflik\",\n      \"esneklik\",\n      \"iletkenlik\"\n    ],\n    \"classes\": [\n      \"plastik\",\n      \"cam\",\n      \"metal\",\n      \"kagit\"\n    ]\n  },\n  \"experiments\": [\n    {\n      \"id\": \"knn\",\n      \"algorithm\": \"KNeighborsClassifier\",\n      \"params\": {\n        \"n_neighbors\": 3,\n        \"scaled\": true\n      },\n      \"train_accuracy\": 0.9283,\n      \"validation_accuracy\": 0.8625,\n      \"training_seconds\": 0.002\n    },\n    {\n      \"id\": \"knn-olceksiz\",\n      \"algorithm\": \"KNeighborsClassifier\",\n      \"params\": {\n        \"n_neighbors\": 3,\n        \"scaled\": false\n      },\n      \"train_accuracy\": 0.9283,\n      \"validation_accuracy\": 0.8875,\n      \"training_seconds\": 0.001\n    },\n    {\n      \"id\": \"karar-agaci-3\",\n      \"algorithm\": \"DecisionTreeClassifier\",\n      \"params\": {\n        \"max_depth\": 3\n      },\n      \"train_accuracy\": 0.8575,\n      \"validation_accuracy\": 0.8225,\n      \"training_seconds\": 0.002\n    },\n    {\n      \"id\": \"karar-agaci-derin\",\n      \"algorithm\": \"DecisionTreeClassifier\",\n      \"params\": {\n        \"max_depth\": null\n      },\n      \"train_accuracy\": 1.0,\n      \"validation_accuracy\": 0.8325,\n      \"training_seconds\": 0.002\n    },\n    {\n      \"id\": \"rastgele-orman\",\n      \"algorithm\": \"RandomForestClassifier\",\n      \"params\": {\n        \"n_estimators\": 200\n      },\n      \"train_accuracy\": 1.0,\n      \"validation_accuracy\": 0.895,\n      \"training_seconds\": 0.181\n    },\n    {\n      \"id\": \"sinir-agi\",\n      \"algorithm\": \"MLPClassifier\",\n      \"params\": {\n        \"hidden_layer_sizes\": \"32,16\",\n        \"max_iter\": 400\n      },\n      \"train_accuracy\": 0.9167,\n      \"validation_accuracy\": 0.88,\n      \"training_seconds\": 0.398\n    },\n    {\n      \"id\": \"rastgele-orman-ayarli\",\n      \"algorithm\": \"RandomForestClassifier\",\n      \"params\": {\n        \"max_depth\": 6,\n        \"n_estimators\": 50\n      },\n      \"train_accuracy\": 0.9367,\n      \"validation_accuracy\": 0.8875,\n      \"training_seconds\": 0.042\n    }\n  ],\n  \"selected_experiment\": \"rastgele-orman\",\n  \"test_metrics\": {\n    \"accuracy\": 0.9275,\n    \"macro_f1\": 0.9276,\n    \"labels\": [\n      \"plastik\",\n      \"cam\",\n      \"metal\",\n      \"kagit\"\n    ],\n    \"confusion_matrix\": [\n      [\n        90,\n        0,\n        2,\n        11\n      ],\n      [\n        0,\n        99,\n        0,\n        0\n      ],\n      [\n        2,\n        2,\n        94,\n        1\n      ],\n      [\n        7,\n        0,\n        4,\n        88\n      ]\n    ],\n    \"per_class\": {\n      \"plastik\": {\n        \"precision\": 0.9091,\n        \"recall\": 0.8738,\n        \"f1\": 0.8911,\n        \"support\": 103\n      },\n      \"cam\": {\n        \"precision\": 0.9802,\n        \"recall\": 1.0,\n        \"f1\": 0.99,\n        \"support\": 99\n      },\n      \"metal\": {\n        \"precision\": 0.94,\n        \"recall\": 0.9495,\n        \"f1\": 0.9447,\n        \"support\": 99\n      },\n      \"kagit\": {\n        \"precision\": 0.88,\n        \"recall\": 0.8889,\n        \"f1\": 0.8844,\n        \"support\": 99\n      }\n    }\n  },\n  \"loss_curve\": [\n    1.48836,\n    1.4176,\n    1.3543,\n    1.2951,\n    1.2367,\n    1.1766,\n    1.11917,\n    1.06299,\n    1.00951,\n    0.95754,\n    0.90817,\n    0.86032,\n    0.81468,\n    0.77133,\n    0.73013,\n    0.69203,\n    0.65605,\n    0.6243,\n    0.59627,\n    0.57207,\n    0.55084,\n    0.53323,\n    0.5184,\n    0.50597,\n    0.49476,\n    0.48577,\n    0.47809,\n    0.47148,\n    0.46549,\n    0.46045,\n    0.45552,\n    0.45137,\n    0.44786,\n    0.44419,\n    0.44117,\n    0.4384,\n    0.43562,\n    0.43321,\n    0.43059,\n    0.42877,\n    0.42646,\n    0.42434,\n    0.4228,\n    0.42079,\n    0.41893,\n    0.41738,\n    0.41582,\n    0.41427,\n    0.41272,\n    0.41128,\n    0.41019,\n    0.40854,\n    0.40723,\n    0.40639,\n    0.40476,\n    0.40423,\n    0.40234,\n    0.40127,\n    0.40031,\n    0.39904,\n    0.39812,\n    0.39727,\n    0.39624,\n    0.39532,\n    0.39454,\n    0.39314,\n    0.39229,\n    0.39118,\n    0.39024,\n    0.3893,\n    0.3886,\n    0.38759,\n    0.38651,\n    0.38565,\n    0.38492,\n    0.38396,\n    0.38301,\n    0.38226,\n    0.38126,\n    0.38043,\n    0.37953,\n    0.37891,\n    0.37805,\n    0.37728,\n    0.37645,\n    0.37578,\n    0.37502,\n    0.37406,\n    0.37324,\n    0.37244,\n    0.37171,\n    0.37107,\n    0.37028,\n    0.37026,\n    0.36895,\n    0.36794,\n    0.36764,\n    0.36666,\n    0.36586,\n    0.36555,\n    0.36492,\n    0.36395,\n    0.36369,\n    0.36274,\n    0.36202,\n    0.36189,\n    0.36099,\n    0.36027,\n    0.3597,\n    0.35886,\n    0.35881,\n    0.35794,\n    0.35707,\n    0.35654,\n    0.35598,\n    0.35562,\n    0.35466,\n    0.35423,\n    0.3537,\n    0.35291,\n    0.35259,\n    0.35167,\n    0.35129,\n    0.35054,\n    0.35011,\n    0.34989,\n    0.34892,\n    0.34864,\n    0.34838,\n    0.34745,\n    0.34701,\n    0.34727,\n    0.34565,\n    0.34521,\n    0.34489,\n    0.34414,\n    0.34411,\n    0.34439,\n    0.34258,\n    0.34251,\n    0.34197,\n    0.34144,\n    0.34077,\n    0.34086,\n    0.34016,\n    0.33948,\n    0.33905,\n    0.33866,\n    0.33808,\n    0.33859,\n    0.33762,\n    0.33679,\n    0.33644,\n    0.33613,\n    0.33559,\n    0.33521,\n    0.33487,\n    0.33419,\n    0.33378,\n    0.33332,\n    0.33365,\n    0.33291,\n    0.33229,\n    0.33177,\n    0.33149,\n    0.33122,\n    0.33057,\n    0.33037,\n    0.32985,\n    0.32975,\n    0.32908,\n    0.32899,\n    0.32825,\n    0.32797,\n    0.32776,\n    0.32755,\n    0.32804,\n    0.3269,\n    0.32624,\n    0.32581,\n    0.3258,\n    0.3254,\n    0.32535,\n    0.32479,\n    0.3241,\n    0.32378,\n    0.32349,\n    0.32401,\n    0.32341,\n    0.32278,\n    0.32233,\n    0.32224,\n    0.32176,\n    0.3218,\n    0.32127,\n    0.32093,\n    0.32083,\n    0.32055,\n    0.3201,\n    0.31986,\n    0.31955,\n    0.31939,\n    0.31876,\n    0.31871,\n    0.31853,\n    0.31829,\n    0.31781,\n    0.31767,\n    0.31774,\n    0.31738,\n    0.31736,\n    0.31675,\n    0.31637,\n    0.31614,\n    0.31575,\n    0.31541,\n    0.31529,\n    0.31526,\n    0.31479,\n    0.31451,\n    0.31499,\n    0.31482,\n    0.31402,\n    0.31398,\n    0.31368,\n    0.31314,\n    0.31349,\n    0.31263,\n    0.31373,\n    0.31202,\n    0.31212,\n    0.31195,\n    0.31207,\n    0.31157,\n    0.31209,\n    0.31105,\n    0.31173,\n    0.31047,\n    0.31065,\n    0.31073,\n    0.30993,\n    0.30981,\n    0.31013,\n    0.3097,\n    0.30938,\n    0.30921,\n    0.30937,\n    0.30863,\n    0.30875,\n    0.30776,\n    0.30817,\n    0.30774,\n    0.30946,\n    0.30897,\n    0.30786,\n    0.30704,\n    0.30774,\n    0.30665,\n    0.30626,\n    0.30631,\n    0.30658,\n    0.30579,\n    0.3059,\n    0.30597,\n    0.30547,\n    0.3055,\n    0.30518,\n    0.30501,\n    0.30506,\n    0.30506,\n    0.30454,\n    0.3046,\n    0.3045,\n    0.3045,\n    0.30416,\n    0.3047,\n    0.30371,\n    0.30475,\n    0.30349,\n    0.30379,\n    0.30319,\n    0.30343,\n    0.30314,\n    0.30298,\n    0.30227,\n    0.30229,\n    0.30214,\n    0.30199,\n    0.30206,\n    0.30177,\n    0.30229,\n    0.30131,\n    0.3016,\n    0.30129,\n    0.30181,\n    0.30184,\n    0.30157,\n    0.30163,\n    0.30088,\n    0.30066,\n    0.30029,\n    0.30058,\n    0.3,\n    0.3003,\n    0.30094,\n    0.29962,\n    0.3008,\n    0.29928,\n    0.30065,\n    0.29955,\n    0.29934,\n    0.29924,\n    0.29891,\n    0.29894,\n    0.29856,\n    0.29851,\n    0.29866,\n    0.29872,\n    0.29812,\n    0.29798,\n    0.29853,\n    0.29818,\n    0.29802,\n    0.29809,\n    0.29741,\n    0.29801,\n    0.29813,\n    0.29784,\n    0.29773,\n    0.2971,\n    0.29676,\n    0.29688,\n    0.29657,\n    0.2964,\n    0.29646,\n    0.29653,\n    0.29632,\n    0.29603,\n    0.29625,\n    0.29593,\n    0.29591,\n    0.29574,\n    0.29655,\n    0.29546,\n    0.2959,\n    0.29573,\n    0.29549,\n    0.29528,\n    0.29496,\n    0.29519,\n    0.29471,\n    0.29513,\n    0.29535,\n    0.29513,\n    0.29462,\n    0.29467,\n    0.2958,\n    0.29498,\n    0.29404,\n    0.29427,\n    0.29439,\n    0.29415,\n    0.29395,\n    0.29356,\n    0.29369,\n    0.29328,\n    0.29353,\n    0.29333,\n    0.29328,\n    0.29299,\n    0.29249,\n    0.29274,\n    0.29259,\n    0.29266,\n    0.29256,\n    0.29228,\n    0.2923,\n    0.29208,\n    0.29182,\n    0.29206,\n    0.29208,\n    0.29156,\n    0.29197,\n    0.29245,\n    0.29193,\n    0.29168,\n    0.29131,\n    0.29126,\n    0.2914,\n    0.29121,\n    0.29121,\n    0.29157,\n    0.29083,\n    0.29129,\n    0.29115,\n    0.29074,\n    0.29099,\n    0.29099,\n    0.2905,\n    0.29019\n  ],\n  \"completed\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"öz bildirim\", () => pm.expect(pm.response.json().data.verification).to.eql(\"self_reported\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aynı raporu tekrar yükle",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/reports?lesson_id=geri-donusum-yapici",
+            "description": "Aynı içerik ikinci kez kaydedilmez: 200 ile mevcut rapor döner.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"1.0\",\n  \"project_id\": \"akilli-geri-donusum\",\n  \"template_id\": \"akilli-geri-donusum-colab\",\n  \"notebook_version\": \"1.0.0\",\n  \"created_at\": \"2026-10-16T05:39:18+00:00\",\n  \"environment\": {\n    \"python\": \"3.14.6\",\n    \"sklearn\": \"1.9.1\",\n    \"accelerator\": \"none\",\n    \"colab\": false,\n    \"runtime_seconds\": 3.6\n  },\n  \"dataset\": {\n    \"name\": \"geri-donusum-gercekci-2000\",\n    \"synthetic\": true,\n    \"n_train\": 1200,\n    \"n_validation\": 400,\n    \"n_test\": 400,\n    \"features\": [\n      \"agirlik_g\",\n      \"seffaflik\",\n      \"esneklik\",\n      \"iletkenlik\"\n    ],\n    \"classes\": [\n      \"plastik\",\n      \"cam\",\n      \"metal\",\n      \"kagit\"\n    ]\n  },\n  \"experiments\": [\n    {\n      \"id\": \"knn\",\n      \"algorithm\": \"KNeighborsClassifier\",\n      \"params\": {\n        \"n_neighbors\": 3,\n        \"scaled\": true\n      },\n      \"train_accuracy\": 0.9283,\n      \"validation_accuracy\": 0.8625,\n      \"training_seconds\": 0.002\n    },\n    {\n      \"id\": \"knn-olceksiz\",\n      \"algorithm\": \"KNeighborsClassifier\",\n      \"params\": {\n        \"n_neighbors\": 3,\n        \"scaled\": false\n      },\n      \"train_accuracy\": 0.9283,\n      \"validation_accuracy\": 0.8875,\n      \"training_seconds\": 0.001\n    },\n    {\n      \"id\": \"karar-agaci-3\",\n      \"algorithm\": \"DecisionTreeClassifier\",\n      \"params\": {\n        \"max_depth\": 3\n      },\n      \"train_accuracy\": 0.8575,\n      \"validation_accuracy\": 0.8225,\n      \"training_seconds\": 0.002\n    },\n    {\n      \"id\": \"karar-agaci-derin\",\n      \"algorithm\": \"DecisionTreeClassifier\",\n      \"params\": {\n        \"max_depth\": null\n      },\n      \"train_accuracy\": 1.0,\n      \"validation_accuracy\": 0.8325,\n      \"training_seconds\": 0.002\n    },\n    {\n      \"id\": \"rastgele-orman\",\n      \"algorithm\": \"RandomForestClassifier\",\n      \"params\": {\n        \"n_estimators\": 200\n      },\n      \"train_accuracy\": 1.0,\n      \"validation_accuracy\": 0.895,\n      \"training_seconds\": 0.181\n    },\n    {\n      \"id\": \"sinir-agi\",\n      \"algorithm\": \"MLPClassifier\",\n      \"params\": {\n        \"hidden_layer_sizes\": \"32,16\",\n        \"max_iter\": 400\n      },\n      \"train_accuracy\": 0.9167,\n      \"validation_accuracy\": 0.88,\n      \"training_seconds\": 0.398\n    },\n    {\n      \"id\": \"rastgele-orman-ayarli\",\n      \"algorithm\": \"RandomForestClassifier\",\n      \"params\": {\n        \"max_depth\": 6,\n        \"n_estimators\": 50\n      },\n      \"train_accuracy\": 0.9367,\n      \"validation_accuracy\": 0.8875,\n      \"training_seconds\": 0.042\n    }\n  ],\n  \"selected_experiment\": \"rastgele-orman\",\n  \"test_metrics\": {\n    \"accuracy\": 0.9275,\n    \"macro_f1\": 0.9276,\n    \"labels\": [\n      \"plastik\",\n      \"cam\",\n      \"metal\",\n      \"kagit\"\n    ],\n    \"confusion_matrix\": [\n      [\n        90,\n        0,\n        2,\n        11\n      ],\n      [\n        0,\n        99,\n        0,\n        0\n      ],\n      [\n        2,\n        2,\n        94,\n        1\n      ],\n      [\n        7,\n        0,\n        4,\n        88\n      ]\n    ],\n    \"per_class\": {\n      \"plastik\": {\n        \"precision\": 0.9091,\n        \"recall\": 0.8738,\n        \"f1\": 0.8911,\n        \"support\": 103\n      },\n      \"cam\": {\n        \"precision\": 0.9802,\n        \"recall\": 1.0,\n        \"f1\": 0.99,\n        \"support\": 99\n      },\n      \"metal\": {\n        \"precision\": 0.94,\n        \"recall\": 0.9495,\n        \"f1\": 0.9447,\n        \"support\": 99\n      },\n      \"kagit\": {\n        \"precision\": 0.88,\n        \"recall\": 0.8889,\n        \"f1\": 0.8844,\n        \"support\": 99\n      }\n    }\n  },\n  \"loss_curve\": [\n    1.48836,\n    1.4176,\n    1.3543,\n    1.2951,\n    1.2367,\n    1.1766,\n    1.11917,\n    1.06299,\n    1.00951,\n    0.95754,\n    0.90817,\n    0.86032,\n    0.81468,\n    0.77133,\n    0.73013,\n    0.69203,\n    0.65605,\n    0.6243,\n    0.59627,\n    0.57207,\n    0.55084,\n    0.53323,\n    0.5184,\n    0.50597,\n    0.49476,\n    0.48577,\n    0.47809,\n    0.47148,\n    0.46549,\n    0.46045,\n    0.45552,\n    0.45137,\n    0.44786,\n    0.44419,\n    0.44117,\n    0.4384,\n    0.43562,\n    0.43321,\n    0.43059,\n    0.42877,\n    0.42646,\n    0.42434,\n    0.4228,\n    0.42079,\n    0.41893,\n    0.41738,\n    0.41582,\n    0.41427,\n    0.41272,\n    0.41128,\n    0.41019,\n    0.40854,\n    0.40723,\n    0.40639,\n    0.40476,\n    0.40423,\n    0.40234,\n    0.40127,\n    0.40031,\n    0.39904,\n    0.39812,\n    0.39727,\n    0.39624,\n    0.39532,\n    0.39454,\n    0.39314,\n    0.39229,\n    0.39118,\n    0.39024,\n    0.3893,\n    0.3886,\n    0.38759,\n    0.38651,\n    0.38565,\n    0.38492,\n    0.38396,\n    0.38301,\n    0.38226,\n    0.38126,\n    0.38043,\n    0.37953,\n    0.37891,\n    0.37805,\n    0.37728,\n    0.37645,\n    0.37578,\n    0.37502,\n    0.37406,\n    0.37324,\n    0.37244,\n    0.37171,\n    0.37107,\n    0.37028,\n    0.37026,\n    0.36895,\n    0.36794,\n    0.36764,\n    0.36666,\n    0.36586,\n    0.36555,\n    0.36492,\n    0.36395,\n    0.36369,\n    0.36274,\n    0.36202,\n    0.36189,\n    0.36099,\n    0.36027,\n    0.3597,\n    0.35886,\n    0.35881,\n    0.35794,\n    0.35707,\n    0.35654,\n    0.35598,\n    0.35562,\n    0.35466,\n    0.35423,\n    0.3537,\n    0.35291,\n    0.35259,\n    0.35167,\n    0.35129,\n    0.35054,\n    0.35011,\n    0.34989,\n    0.34892,\n    0.34864,\n    0.34838,\n    0.34745,\n    0.34701,\n    0.34727,\n    0.34565,\n    0.34521,\n    0.34489,\n    0.34414,\n    0.34411,\n    0.34439,\n    0.34258,\n    0.34251,\n    0.34197,\n    0.34144,\n    0.34077,\n    0.34086,\n    0.34016,\n    0.33948,\n    0.33905,\n    0.33866,\n    0.33808,\n    0.33859,\n    0.33762,\n    0.33679,\n    0.33644,\n    0.33613,\n    0.33559,\n    0.33521,\n    0.33487,\n    0.33419,\n    0.33378,\n    0.33332,\n    0.33365,\n    0.33291,\n    0.33229,\n    0.33177,\n    0.33149,\n    0.33122,\n    0.33057,\n    0.33037,\n    0.32985,\n    0.32975,\n    0.32908,\n    0.32899,\n    0.32825,\n    0.32797,\n    0.32776,\n    0.32755,\n    0.32804,\n    0.3269,\n    0.32624,\n    0.32581,\n    0.3258,\n    0.3254,\n    0.32535,\n    0.32479,\n    0.3241,\n    0.32378,\n    0.32349,\n    0.32401,\n    0.32341,\n    0.32278,\n    0.32233,\n    0.32224,\n    0.32176,\n    0.3218,\n    0.32127,\n    0.32093,\n    0.32083,\n    0.32055,\n    0.3201,\n    0.31986,\n    0.31955,\n    0.31939,\n    0.31876,\n    0.31871,\n    0.31853,\n    0.31829,\n    0.31781,\n    0.31767,\n    0.31774,\n    0.31738,\n    0.31736,\n    0.31675,\n    0.31637,\n    0.31614,\n    0.31575,\n    0.31541,\n    0.31529,\n    0.31526,\n    0.31479,\n    0.31451,\n    0.31499,\n    0.31482,\n    0.31402,\n    0.31398,\n    0.31368,\n    0.31314,\n    0.31349,\n    0.31263,\n    0.31373,\n    0.31202,\n    0.31212,\n    0.31195,\n    0.31207,\n    0.31157,\n    0.31209,\n    0.31105,\n    0.31173,\n    0.31047,\n    0.31065,\n    0.31073,\n    0.30993,\n    0.30981,\n    0.31013,\n    0.3097,\n    0.30938,\n    0.30921,\n    0.30937,\n    0.30863,\n    0.30875,\n    0.30776,\n    0.30817,\n    0.30774,\n    0.30946,\n    0.30897,\n    0.30786,\n    0.30704,\n    0.30774,\n    0.30665,\n    0.30626,\n    0.30631,\n    0.30658,\n    0.30579,\n    0.3059,\n    0.30597,\n    0.30547,\n    0.3055,\n    0.30518,\n    0.30501,\n    0.30506,\n    0.30506,\n    0.30454,\n    0.3046,\n    0.3045,\n    0.3045,\n    0.30416,\n    0.3047,\n    0.30371,\n    0.30475,\n    0.30349,\n    0.30379,\n    0.30319,\n    0.30343,\n    0.30314,\n    0.30298,\n    0.30227,\n    0.30229,\n    0.30214,\n    0.30199,\n    0.30206,\n    0.30177,\n    0.30229,\n    0.30131,\n    0.3016,\n    0.30129,\n    0.30181,\n    0.30184,\n    0.30157,\n    0.30163,\n    0.30088,\n    0.30066,\n    0.30029,\n    0.30058,\n    0.3,\n    0.3003,\n    0.30094,\n    0.29962,\n    0.3008,\n    0.29928,\n    0.30065,\n    0.29955,\n    0.29934,\n    0.29924,\n    0.29891,\n    0.29894,\n    0.29856,\n    0.29851,\n    0.29866,\n    0.29872,\n    0.29812,\n    0.29798,\n    0.29853,\n    0.29818,\n    0.29802,\n    0.29809,\n    0.29741,\n    0.29801,\n    0.29813,\n    0.29784,\n    0.29773,\n    0.2971,\n    0.29676,\n    0.29688,\n    0.29657,\n    0.2964,\n    0.29646,\n    0.29653,\n    0.29632,\n    0.29603,\n    0.29625,\n    0.29593,\n    0.29591,\n    0.29574,\n    0.29655,\n    0.29546,\n    0.2959,\n    0.29573,\n    0.29549,\n    0.29528,\n    0.29496,\n    0.29519,\n    0.29471,\n    0.29513,\n    0.29535,\n    0.29513,\n    0.29462,\n    0.29467,\n    0.2958,\n    0.29498,\n    0.29404,\n    0.29427,\n    0.29439,\n    0.29415,\n    0.29395,\n    0.29356,\n    0.29369,\n    0.29328,\n    0.29353,\n    0.29333,\n    0.29328,\n    0.29299,\n    0.29249,\n    0.29274,\n    0.29259,\n    0.29266,\n    0.29256,\n    0.29228,\n    0.2923,\n    0.29208,\n    0.29182,\n    0.29206,\n    0.29208,\n    0.29156,\n    0.29197,\n    0.29245,\n    0.29193,\n    0.29168,\n    0.29131,\n    0.29126,\n    0.2914,\n    0.29121,\n    0.29121,\n    0.29157,\n    0.29083,\n    0.29129,\n    0.29115,\n    0.29074,\n    0.29099,\n    0.29099,\n    0.2905,\n    0.29019\n  ],\n  \"completed\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"kayıtlı rapor döner\", () => pm.expect(pm.response.json().data.verification).to.eql(\"self_reported\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tutarsız rapor reddedilir",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/reports?lesson_id=geri-donusum-yapici",
+            "description": "Doğruluk, karışıklık matrisiyle uyuşmadığı için reddedilir. Ayrıntılar error.details içinde.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schema_version\": \"1.0\",\n  \"project_id\": \"akilli-geri-donusum\",\n  \"template_id\": \"akilli-geri-donusum-colab\",\n  \"notebook_version\": \"1.0.0\",\n  \"created_at\": \"2026-10-16T05:39:18+00:00\",\n  \"environment\": {\n    \"python\": \"3.14.6\",\n    \"sklearn\": \"1.9.1\",\n    \"accelerator\": \"none\",\n    \"colab\": false,\n    \"runtime_seconds\": 3.6\n  },\n  \"dataset\": {\n    \"name\": \"geri-donusum-gercekci-2000\",\n    \"synthetic\": true,\n    \"n_train\": 1200,\n    \"n_validation\": 400,\n    \"n_test\": 400,\n    \"features\": [\n      \"agirlik_g\",\n      \"seffaflik\",\n      \"esneklik\",\n      \"iletkenlik\"\n    ],\n    \"classes\": [\n      \"plastik\",\n      \"cam\",\n      \"metal\",\n      \"kagit\"\n    ]\n  },\n  \"experiments\": [\n    {\n      \"id\": \"knn\",\n      \"algorithm\": \"KNeighborsClassifier\",\n      \"params\": {\n        \"n_neighbors\": 3,\n        \"scaled\": true\n      },\n      \"train_accuracy\": 0.9283,\n      \"validation_accuracy\": 0.8625,\n      \"training_seconds\": 0.002\n    },\n    {\n      \"id\": \"knn-olceksiz\",\n      \"algorithm\": \"KNeighborsClassifier\",\n      \"params\": {\n        \"n_neighbors\": 3,\n        \"scaled\": false\n      },\n      \"train_accuracy\": 0.9283,\n      \"validation_accuracy\": 0.8875,\n      \"training_seconds\": 0.001\n    },\n    {\n      \"id\": \"karar-agaci-3\",\n      \"algorithm\": \"DecisionTreeClassifier\",\n      \"params\": {\n        \"max_depth\": 3\n      },\n      \"train_accuracy\": 0.8575,\n      \"validation_accuracy\": 0.8225,\n      \"training_seconds\": 0.002\n    },\n    {\n      \"id\": \"karar-agaci-derin\",\n      \"algorithm\": \"DecisionTreeClassifier\",\n      \"params\": {\n        \"max_depth\": null\n      },\n      \"train_accuracy\": 1.0,\n      \"validation_accuracy\": 0.8325,\n      \"training_seconds\": 0.002\n    },\n    {\n      \"id\": \"rastgele-orman\",\n      \"algorithm\": \"RandomForestClassifier\",\n      \"params\": {\n        \"n_estimators\": 200\n      },\n      \"train_accuracy\": 1.0,\n      \"validation_accuracy\": 0.895,\n      \"training_seconds\": 0.181\n    },\n    {\n      \"id\": \"sinir-agi\",\n      \"algorithm\": \"MLPClassifier\",\n      \"params\": {\n        \"hidden_layer_sizes\": \"32,16\",\n        \"max_iter\": 400\n      },\n      \"train_accuracy\": 0.9167,\n      \"validation_accuracy\": 0.88,\n      \"training_seconds\": 0.398\n    },\n    {\n      \"id\": \"rastgele-orman-ayarli\",\n      \"algorithm\": \"RandomForestClassifier\",\n      \"params\": {\n        \"max_depth\": 6,\n        \"n_estimators\": 50\n      },\n      \"train_accuracy\": 0.9367,\n      \"validation_accuracy\": 0.8875,\n      \"training_seconds\": 0.042\n    }\n  ],\n  \"selected_experiment\": \"rastgele-orman\",\n  \"test_metrics\": {\n    \"accuracy\": 0.999,\n    \"macro_f1\": 0.9276,\n    \"labels\": [\n      \"plastik\",\n      \"cam\",\n      \"metal\",\n      \"kagit\"\n    ],\n    \"confusion_matrix\": [\n      [\n        90,\n        0,\n        2,\n        11\n      ],\n      [\n        0,\n        99,\n        0,\n        0\n      ],\n      [\n        2,\n        2,\n        94,\n        1\n      ],\n      [\n        7,\n        0,\n        4,\n        88\n      ]\n    ],\n    \"per_class\": {\n      \"plastik\": {\n        \"precision\": 0.9091,\n        \"recall\": 0.8738,\n        \"f1\": 0.8911,\n        \"support\": 103\n      },\n      \"cam\": {\n        \"precision\": 0.9802,\n        \"recall\": 1.0,\n        \"f1\": 0.99,\n        \"support\": 99\n      },\n      \"metal\": {\n        \"precision\": 0.94,\n        \"recall\": 0.9495,\n        \"f1\": 0.9447,\n        \"support\": 99\n      },\n      \"kagit\": {\n        \"precision\": 0.88,\n        \"recall\": 0.8889,\n        \"f1\": 0.8844,\n        \"support\": 99\n      }\n    }\n  },\n  \"loss_curve\": [\n    1.48836,\n    1.4176,\n    1.3543,\n    1.2951,\n    1.2367,\n    1.1766,\n    1.11917,\n    1.06299,\n    1.00951,\n    0.95754,\n    0.90817,\n    0.86032,\n    0.81468,\n    0.77133,\n    0.73013,\n    0.69203,\n    0.65605,\n    0.6243,\n    0.59627,\n    0.57207,\n    0.55084,\n    0.53323,\n    0.5184,\n    0.50597,\n    0.49476,\n    0.48577,\n    0.47809,\n    0.47148,\n    0.46549,\n    0.46045,\n    0.45552,\n    0.45137,\n    0.44786,\n    0.44419,\n    0.44117,\n    0.4384,\n    0.43562,\n    0.43321,\n    0.43059,\n    0.42877,\n    0.42646,\n    0.42434,\n    0.4228,\n    0.42079,\n    0.41893,\n    0.41738,\n    0.41582,\n    0.41427,\n    0.41272,\n    0.41128,\n    0.41019,\n    0.40854,\n    0.40723,\n    0.40639,\n    0.40476,\n    0.40423,\n    0.40234,\n    0.40127,\n    0.40031,\n    0.39904,\n    0.39812,\n    0.39727,\n    0.39624,\n    0.39532,\n    0.39454,\n    0.39314,\n    0.39229,\n    0.39118,\n    0.39024,\n    0.3893,\n    0.3886,\n    0.38759,\n    0.38651,\n    0.38565,\n    0.38492,\n    0.38396,\n    0.38301,\n    0.38226,\n    0.38126,\n    0.38043,\n    0.37953,\n    0.37891,\n    0.37805,\n    0.37728,\n    0.37645,\n    0.37578,\n    0.37502,\n    0.37406,\n    0.37324,\n    0.37244,\n    0.37171,\n    0.37107,\n    0.37028,\n    0.37026,\n    0.36895,\n    0.36794,\n    0.36764,\n    0.36666,\n    0.36586,\n    0.36555,\n    0.36492,\n    0.36395,\n    0.36369,\n    0.36274,\n    0.36202,\n    0.36189,\n    0.36099,\n    0.36027,\n    0.3597,\n    0.35886,\n    0.35881,\n    0.35794,\n    0.35707,\n    0.35654,\n    0.35598,\n    0.35562,\n    0.35466,\n    0.35423,\n    0.3537,\n    0.35291,\n    0.35259,\n    0.35167,\n    0.35129,\n    0.35054,\n    0.35011,\n    0.34989,\n    0.34892,\n    0.34864,\n    0.34838,\n    0.34745,\n    0.34701,\n    0.34727,\n    0.34565,\n    0.34521,\n    0.34489,\n    0.34414,\n    0.34411,\n    0.34439,\n    0.34258,\n    0.34251,\n    0.34197,\n    0.34144,\n    0.34077,\n    0.34086,\n    0.34016,\n    0.33948,\n    0.33905,\n    0.33866,\n    0.33808,\n    0.33859,\n    0.33762,\n    0.33679,\n    0.33644,\n    0.33613,\n    0.33559,\n    0.33521,\n    0.33487,\n    0.33419,\n    0.33378,\n    0.33332,\n    0.33365,\n    0.33291,\n    0.33229,\n    0.33177,\n    0.33149,\n    0.33122,\n    0.33057,\n    0.33037,\n    0.32985,\n    0.32975,\n    0.32908,\n    0.32899,\n    0.32825,\n    0.32797,\n    0.32776,\n    0.32755,\n    0.32804,\n    0.3269,\n    0.32624,\n    0.32581,\n    0.3258,\n    0.3254,\n    0.32535,\n    0.32479,\n    0.3241,\n    0.32378,\n    0.32349,\n    0.32401,\n    0.32341,\n    0.32278,\n    0.32233,\n    0.32224,\n    0.32176,\n    0.3218,\n    0.32127,\n    0.32093,\n    0.32083,\n    0.32055,\n    0.3201,\n    0.31986,\n    0.31955,\n    0.31939,\n    0.31876,\n    0.31871,\n    0.31853,\n    0.31829,\n    0.31781,\n    0.31767,\n    0.31774,\n    0.31738,\n    0.31736,\n    0.31675,\n    0.31637,\n    0.31614,\n    0.31575,\n    0.31541,\n    0.31529,\n    0.31526,\n    0.31479,\n    0.31451,\n    0.31499,\n    0.31482,\n    0.31402,\n    0.31398,\n    0.31368,\n    0.31314,\n    0.31349,\n    0.31263,\n    0.31373,\n    0.31202,\n    0.31212,\n    0.31195,\n    0.31207,\n    0.31157,\n    0.31209,\n    0.31105,\n    0.31173,\n    0.31047,\n    0.31065,\n    0.31073,\n    0.30993,\n    0.30981,\n    0.31013,\n    0.3097,\n    0.30938,\n    0.30921,\n    0.30937,\n    0.30863,\n    0.30875,\n    0.30776,\n    0.30817,\n    0.30774,\n    0.30946,\n    0.30897,\n    0.30786,\n    0.30704,\n    0.30774,\n    0.30665,\n    0.30626,\n    0.30631,\n    0.30658,\n    0.30579,\n    0.3059,\n    0.30597,\n    0.30547,\n    0.3055,\n    0.30518,\n    0.30501,\n    0.30506,\n    0.30506,\n    0.30454,\n    0.3046,\n    0.3045,\n    0.3045,\n    0.30416,\n    0.3047,\n    0.30371,\n    0.30475,\n    0.30349,\n    0.30379,\n    0.30319,\n    0.30343,\n    0.30314,\n    0.30298,\n    0.30227,\n    0.30229,\n    0.30214,\n    0.30199,\n    0.30206,\n    0.30177,\n    0.30229,\n    0.30131,\n    0.3016,\n    0.30129,\n    0.30181,\n    0.30184,\n    0.30157,\n    0.30163,\n    0.30088,\n    0.30066,\n    0.30029,\n    0.30058,\n    0.3,\n    0.3003,\n    0.30094,\n    0.29962,\n    0.3008,\n    0.29928,\n    0.30065,\n    0.29955,\n    0.29934,\n    0.29924,\n    0.29891,\n    0.29894,\n    0.29856,\n    0.29851,\n    0.29866,\n    0.29872,\n    0.29812,\n    0.29798,\n    0.29853,\n    0.29818,\n    0.29802,\n    0.29809,\n    0.29741,\n    0.29801,\n    0.29813,\n    0.29784,\n    0.29773,\n    0.2971,\n    0.29676,\n    0.29688,\n    0.29657,\n    0.2964,\n    0.29646,\n    0.29653,\n    0.29632,\n    0.29603,\n    0.29625,\n    0.29593,\n    0.29591,\n    0.29574,\n    0.29655,\n    0.29546,\n    0.2959,\n    0.29573,\n    0.29549,\n    0.29528,\n    0.29496,\n    0.29519,\n    0.29471,\n    0.29513,\n    0.29535,\n    0.29513,\n    0.29462,\n    0.29467,\n    0.2958,\n    0.29498,\n    0.29404,\n    0.29427,\n    0.29439,\n    0.29415,\n    0.29395,\n    0.29356,\n    0.29369,\n    0.29328,\n    0.29353,\n    0.29333,\n    0.29328,\n    0.29299,\n    0.29249,\n    0.29274,\n    0.29259,\n    0.29266,\n    0.29256,\n    0.29228,\n    0.2923,\n    0.29208,\n    0.29182,\n    0.29206,\n    0.29208,\n    0.29156,\n    0.29197,\n    0.29245,\n    0.29193,\n    0.29168,\n    0.29131,\n    0.29126,\n    0.2914,\n    0.29121,\n    0.29121,\n    0.29157,\n    0.29083,\n    0.29129,\n    0.29115,\n    0.29074,\n    0.29099,\n    0.29099,\n    0.2905,\n    0.29019\n  ],\n  \"completed\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"hata kodu report_invalid\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.error.code).to.eql(\"report_invalid\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Raporlarım",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/reports",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"1 rapor\", () => pm.expect(pm.response.json().data.length).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3 · Öğretmen ve sınıf",
+      "description": "Öğretmen {{teacherUrl}} (127.0.0.1) üzerinden çalışır; çerezleri öğrencininkinden ayrı tutulur.",
+      "item": [
+        {
+          "name": "Demo öğretmen oturumu aç",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{teacherUrl}}/auth/demo",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"teacher\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sınıf oluştur",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{teacherUrl}}/classrooms",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"7-A Yapay Zekâ\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const d = pm.response.json().data; pm.collectionVariables.set(\"classroomId\", d.id); pm.collectionVariables.set(\"joinCode\", d.join_code);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "(Öğrenci) Sınıf koduyla katıl",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/classrooms/join",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{joinCode}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 202\", () => pm.response.to.have.status(202));",
+                  "pm.test(\"onay bekliyor\", () => pm.expect(pm.response.json().data.status).to.eql(\"pending\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "(Öğrenci) Onaysızken ödevleri göremez",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/classrooms/{{classroomId}}/assignments",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"hata kodu classroom_not_found\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.error.code).to.eql(\"classroom_not_found\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Üyeleri listele",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{teacherUrl}}/classrooms/{{classroomId}}/members",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Öğrenciyi onayla",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              }
+            ],
+            "url": "{{teacherUrl}}/classrooms/{{classroomId}}/members/{{studentId}}/approve",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"aktif\", () => pm.expect(pm.response.json().data.status).to.eql(\"active\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ödev ver",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{teacherUrl}}/classrooms/{{classroomId}}/assignments",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lesson_id\": \"geri-donusum-yapici\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "(Öğrenci) Ödevlerim",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/classrooms/{{classroomId}}/assignments",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Öğrencinin ilerlemesi",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{teacherUrl}}/classrooms/{{classroomId}}/students/{{studentId}}/progress",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Öğrencinin Colab raporları",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{teacherUrl}}/classrooms/{{classroomId}}/students/{{studentId}}/reports",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"1 rapor\", () => pm.expect(pm.response.json().data.length).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "(Öğrenci) Demo öğrenci çıkış yapar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/logout",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"1 oturum kapandı\", () => pm.expect(pm.response.json().data.sessions_ended).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4 · Öğretmen öğrenci hesabı açar",
+      "description": "Gerçek kullanımın akışı: e-posta yok; öğretmen kullanıcı adı + tek seferlik şifre verir, öğrenci ilk girişte şifresini değiştirir.",
+      "item": [
+        {
+          "name": "Öğrenci hesabı oluştur",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{teacherUrl}}/classrooms/{{classroomId}}/students",
+            "description": "Kullanıcı adı ve tek seferlik şifre yalnızca bu yanıtta görünür; veritabanında düz metin olarak saklanmaz.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"display_name\": \"Ayşe K.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const d = pm.response.json().data; pm.collectionVariables.set(\"newLogin\", d.login); pm.collectionVariables.set(\"oneTimePassword\", d.one_time_password); pm.collectionVariables.set(\"newStudentId\", d.user_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Toplu öğrenci hesabı oluştur",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{teacherUrl}}/classrooms/{{classroomId}}/students/bulk",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"students\": [\n    {\n      \"display_name\": \"Ali Y.\"\n    },\n    {\n      \"display_name\": \"Çağrı D.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"2 hesap\", () => pm.expect(pm.response.json().data.length).to.eql(2));",
+                  "pm.collectionVariables.set(\"bulkStudentId\", pm.response.json().data[0].user_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "(Öğrenci) Tek seferlik şifreyle giriş",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{newLogin}}\",\n  \"password\": \"{{oneTimePassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"şifre değiştirmesi gerekiyor\", () => pm.expect(pm.response.json().data.user.must_change_password).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "(Öğrenci) Şifre değişmeden sınıflar kapalı",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/classrooms",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"hata kodu password_change_required\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.error.code).to.eql(\"password_change_required\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "(Öğrenci) Zayıf şifre reddedilir",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/password",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"{{oneTimePassword}}\",\n  \"new_password\": \"12345678\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"hata kodu weak_password\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.error.code).to.eql(\"weak_password\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "(Öğrenci) Şifresini değiştirir",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/password",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"{{oneTimePassword}}\",\n  \"new_password\": \"{{newStudentPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"artık serbest\", () => pm.expect(pm.response.json().data.user.must_change_password).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "(Öğrenci) Sınıfını görür",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/classrooms",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"1 sınıf\", () => pm.expect(pm.response.json().data.length).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Öğretmen şifreyi sıfırlar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              }
+            ],
+            "url": "{{teacherUrl}}/classrooms/{{classroomId}}/students/{{newStudentId}}/reset-password",
+            "description": "Öğrenci tüm cihazlardan çıkarılır ve yeni tek seferlik şifreyle girip şifresini yeniden belirler."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set(\"oneTimePassword\", pm.response.json().data.one_time_password);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "(Öğrenci) Sıfırlamadan sonra oturum kapanmıştır",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/auth/me",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"hata kodu session_expired\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.error.code).to.eql(\"session_expired\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5 · Verilerim (KVKK)",
+      "description": "Kişisel verilerle ilgili haklar: düzeltme, indirme, erişim kaydı ve silme. Sıfırlanan öğrenci yeni tek seferlik şifreyle girer.",
+      "item": [
+        {
+          "name": "(Öğrenci) Yeni tek seferlik şifreyle giriş",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{newLogin}}\",\n  \"password\": \"{{oneTimePassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "(Öğrenci) Yeni şifresini belirler",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/password",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"{{oneTimePassword}}\",\n  \"new_password\": \"{{newStudentPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "(Öğrenci) Bilgilerimi düzelt",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/me",
+            "description": "Yalnızca gönderilen alanlar değişir.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"display_name\": \"Ayşe K.\",\n  \"age_band\": \"11-13\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"yaş aralığı kaydedildi\", () => pm.expect(pm.response.json().data.age_band).to.eql(\"11-13\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "(Öğrenci) Verilerimi indir",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/me/export",
+            "description": "API'de saklanan her şey tek bir JSON belgesinde (data). Kaydetmek için: Save Response → Save to a file."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"dışa aktarma biçimi\", () => pm.expect(pm.response.json().data.format_version).to.eql(1));",
+                  "pm.test(\"şifre özeti yok\", () => pm.expect(pm.response.text()).to.not.include(\"scrypt$\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "(Öğrenci) Verilerime kim erişti?",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/me/access-log",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"öğretmenin şifre sıfırlaması görünür\", () => pm.expect(pm.response.json().data.map(e => e.action)).to.include(\"student_password_reset\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Öğretmen, oluşturduğu bir öğrenci hesabını siler",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              }
+            ],
+            "url": "{{teacherUrl}}/classrooms/{{classroomId}}/students/{{bulkStudentId}}",
+            "description": "Okuldan ayrılan öğrenciler için. Hesap ve tüm verileri kalıcı olarak silinir."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "(Öğrenci) Hesabımı sil",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/me/delete",
+            "description": "Geri alınamaz. Defterler, ilerleme kayıtları, raporlar ve oturumlar da silinir.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"{{newStudentPassword}}\",\n  \"confirm\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "(Öğrenci) Silinen hesapla giriş yapılamaz",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{newLogin}}\",\n  \"password\": \"{{newStudentPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"hata kodu invalid_credentials\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.error.code).to.eql(\"invalid_credentials\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6 · Çıkış",
+      "item": [
+        {
+          "name": "Öğretmen tüm cihazlardan çıkar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-atolye-client",
+                "value": "1"
+              }
+            ],
+            "url": "{{teacherUrl}}/auth/logout-all",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Çıkıştan sonra oturum yok",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{teacherUrl}}/auth/me",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"hata kodu not_authenticated\", () => { const b = pm.response.json(); pm.expect(b.success).to.eql(false); pm.expect(b.error.code).to.eql(\"not_authenticated\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000/api/v1"
+    },
+    {
+      "key": "teacherUrl",
+      "value": "http://127.0.0.1:8000/api/v1"
+    },
+    {
+      "key": "studentId",
+      "value": ""
+    },
+    {
+      "key": "classroomId",
+      "value": ""
+    },
+    {
+      "key": "joinCode",
+      "value": ""
+    },
+    {
+      "key": "newLogin",
+      "value": ""
+    },
+    {
+      "key": "oneTimePassword",
+      "value": ""
+    },
+    {
+      "key": "newStudentId",
+      "value": ""
+    },
+    {
+      "key": "newStudentPassword",
+      "value": "mavi-bisiklet-yaz-2026"
+    },
+    {
+      "key": "bulkStudentId",
+      "value": ""
+    },
+    {
+      "key": "notebookEtag",
+      "value": ""
+    }
+  ]
+}

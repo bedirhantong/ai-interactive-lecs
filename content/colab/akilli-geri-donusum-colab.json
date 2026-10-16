@@ -1,0 +1,19 @@
+{
+  "id": "akilli-geri-donusum-colab",
+  "version": "1.0.0",
+  "title": "Akıllı Geri Dönüşüm Makinesi: Colab Lab",
+  "description": "Daha büyük ve daha gerçekçi bir veri setiyle KNN, karar ağacı, rastgele orman ve yapay sinir ağı eğit; doğrulama verisiyle model seç, test verisiyle değerlendir ve raporunu AI Atölye'ye geri getir.",
+  "projectId": "akilli-geri-donusum",
+  "notebookFile": "akilli-geri-donusum-colab.ipynb",
+  "reportSchemaVersion": "1.0",
+  "estimatedMinutes": 30,
+  "accelerator": "none",
+  "datasetNote": "Defter, AI Atölye'deki kurallarla üretilen ama daha gürültülü, iki zor nesne türü ve %4 etiket hatası içeren 2000 örneklik sentetik bir veri seti oluşturur. İnternetten veri indirmez.",
+  "steps": [
+    "Defteri Google Colab'da aç (kendi Google hesabınla).",
+    "Hücreleri yukarıdan aşağıya sırayla çalıştır (Shift + Enter). GPU gerekmez.",
+    "Görevleri yap: modelleri karşılaştır, doğrulama verisiyle birini seç.",
+    "Son hücre ai-atolye-rapor.json dosyasını indirir.",
+    "Bu sayfaya dön ve raporu aşağıdan içe aktar."
+  ]
+}

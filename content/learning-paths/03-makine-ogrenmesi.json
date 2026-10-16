@@ -1,0 +1,26 @@
+{
+  "id": "makine-ogrenmesi",
+  "order": 3,
+  "title": "Makine Öğrenmesi",
+  "description": "Özellikler, etiketler, eğitim ve test. Regresyon ve sınıflandırma modellerini kur, karşılaştır ve değerlendir.",
+  "levels": ["builder", "developer"],
+  "modules": [
+    {
+      "id": "regresyon",
+      "title": "Regresyon",
+      "description": "Sayısal bir değeri tahmin eden modeller.",
+      "items": [
+        { "kind": "lesson", "lessonId": "tahmin-modeli-laboratuvari" }
+      ]
+    },
+    {
+      "id": "siniflandirma",
+      "title": "Sınıflandırma",
+      "description": "K-en yakın komşu ve karar ağaçlarıyla sınıflandırma.",
+      "items": [
+        { "kind": "project", "projectId": "akilli-geri-donusum" },
+        { "kind": "planned", "title": "Karar ağaçları ve aşırı öğrenme", "level": "developer" }
+      ]
+    }
+  ]
+}

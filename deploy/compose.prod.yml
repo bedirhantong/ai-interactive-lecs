@@ -1,0 +1,109 @@
+# Production stack: one command.
+#   cp deploy/.env.prod.example deploy/.env.prod   # then fill in the values
+#   docker compose -f deploy/compose.prod.yml --env-file deploy/.env.prod up -d --build
+#
+# Only the proxy publishes ports. The database, API and web app live on an internal network.
+# Order on start: db (healthy) → migrate (alembic upgrade head, then exits) → api + maintenance; web; proxy.
+
+name: ai-atolye
+
+x-api-env: &api-env
+  ATOLYE_ENV: production
+  ATOLYE_DATABASE_URL: postgresql+psycopg://atolye:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@db:5432/atolye
+  ATOLYE_SECRET_KEY: ${ATOLYE_SECRET_KEY:?set ATOLYE_SECRET_KEY}
+  ATOLYE_ALLOWED_ORIGINS: ${ATOLYE_ALLOWED_ORIGINS:-https://${SITE_ADDRESS}}
+  ATOLYE_COOKIE_SECURE: "true"
+  ATOLYE_DEMO_MODE: "false"
+  ATOLYE_SESSION_TTL_HOURS: ${ATOLYE_SESSION_TTL_HOURS:-12}
+  ATOLYE_AUDIT_RETENTION_DAYS: ${ATOLYE_AUDIT_RETENTION_DAYS:-365}
+  ATOLYE_INACTIVE_STUDENT_RETENTION_DAYS: ${ATOLYE_INACTIVE_STUDENT_RETENTION_DAYS:-}
+  ATOLYE_LOG_LEVEL: ${ATOLYE_LOG_LEVEL:-INFO}
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: atolye
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: atolye
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atolye -d atolye"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [internal]
+
+  migrate:
+    image: ai-atolye-api:${IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    command: ["alembic", "upgrade", "head"]
+    environment: *api-env
+    depends_on:
+      db: { condition: service_healthy }
+    restart: "no"
+    networks: [internal]
+
+  api:
+    image: ai-atolye-api:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      <<: *api-env
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
+      # The API is reachable only through the proxy on this network, so forwarded headers can be trusted.
+      FORWARDED_ALLOW_IPS: "*"
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    networks: [internal]
+
+  maintenance:
+    # Daily housekeeping and data retention (python -m app.cli cleanup).
+    image: ai-atolye-api:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    command: ["sh", "-c", "while true; do python -m app.cli cleanup; sleep 86400; done"]
+    environment: *api-env
+    healthcheck:
+      disable: true
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    networks: [internal]
+
+  web:
+    image: ai-atolye-web:${IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_COLAB_GITHUB_REPO: ${NEXT_PUBLIC_COLAB_GITHUB_REPO:-}
+        NEXT_PUBLIC_COLAB_GITHUB_BRANCH: ${NEXT_PUBLIC_COLAB_GITHUB_BRANCH:-main}
+    restart: unless-stopped
+    networks: [internal]
+
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?set SITE_ADDRESS}
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api: { condition: service_healthy }
+      web: { condition: service_healthy }
+    networks: [internal]
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
+
+networks:
+  internal:

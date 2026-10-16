@@ -1,0 +1,19 @@
+{
+  "id": "python-ile-ai",
+  "order": 2,
+  "title": "Python ile AI",
+  "description": "Yapay zekâ programlarının dili Python'u, tarayıcında çalışan gerçek kodla öğren.",
+  "levels": ["builder", "developer"],
+  "modules": [
+    {
+      "id": "python-temelleri",
+      "title": "Python temelleri",
+      "description": "Değişkenler, listeler, döngüler, koşullar ve fonksiyonlar.",
+      "items": [
+        { "kind": "lesson", "lessonId": "python-ilk-adimlar" },
+        { "kind": "planned", "title": "Veriyle çalışmak: sözlükler ve CSV", "level": "builder" },
+        { "kind": "planned", "title": "Basit tahmin algoritmaları", "level": "developer" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "id": "geri-donusum",
+  "title": "Geri dönüşüm nesneleri",
+  "description": "Bir geri dönüşüm makinesinin sensörlerinden okunduğunu varsaydığımız ölçümler. Her satır bir atık nesnesidir.",
+  "file": "geri-donusum.csv",
+  "synthetic": true,
+  "provenance": "Bu veri seti eğitim amacıyla bilgisayarla üretilmiştir (scripts/generate_datasets.py). Gerçek sensör ölçümü değildir. Model fotoğraf görmez; yalnızca bu sayıları kullanır.",
+  "task": "classification",
+  "idColumn": "id",
+  "nameColumn": "nesne",
+  "target": "malzeme",
+  "features": [
+    { "key": "agirlik_g", "label": "Ağırlık", "unit": "g", "description": "Nesnenin gram cinsinden ağırlığı." },
+    { "key": "seffaflik", "label": "Şeffaflık", "unit": "0–100", "description": "Işığın nesneden ne kadar geçtiği. 0: hiç geçmiyor, 100: tamamen şeffaf." },
+    { "key": "esneklik", "label": "Esneklik", "unit": "0–100", "description": "Nesne bastırıldığında ne kadar büküldüğü. 0: hiç bükülmüyor." },
+    { "key": "iletkenlik", "label": "İletkenlik", "unit": "0–100", "description": "Makinedeki iletkenlik sensörünün ölçümü. Metaller elektriği iyi iletir." }
+  ],
+  "classes": [
+    { "key": "plastik", "label": "Plastik", "color": "#e8590c" },
+    { "key": "cam", "label": "Cam", "color": "#1c7ed6" },
+    { "key": "metal", "label": "Metal", "color": "#5f3dc4" },
+    { "key": "kagit", "label": "Kâğıt", "color": "#2b8a3e" }
+  ]
+}

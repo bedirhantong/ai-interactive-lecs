@@ -1,0 +1,39 @@
+{
+  "id": "akilli-geri-donusum",
+  "title": "Akıllı Geri Dönüşüm Makinesi",
+  "tagline": "Atıkları sensör ölçümlerinden tanıyan bir sınıflandırıcı yap.",
+  "problem": [
+    "Okulunun geri dönüşüm kutularına yanlış atıklar atılıyor. Bir makine, kutuya atılan nesneyi sensörleriyle ölçüp plastik, cam, metal ya da kâğıt olarak ayırabilir mi?",
+    "",
+    "Bu projede makinenin \"beynini\" sen kuracaksın: örneklerden öğrenen bir model eğitecek, onu daha önce görmediği nesnelerle test edecek ve hatalarını inceleyeceksin."
+  ],
+  "objective": "Sensör ölçümlerinden malzeme türünü tahmin eden bir modeli eğit, test verisiyle değerlendir ve hangi ölçümlerin işe yaradığını açıkla.",
+  "datasetId": "geri-donusum",
+  "hypothesisPrompt": "Sence makinenin metali kâğıttan ayırması için hangi ölçüm en önemli olacak?",
+  "modes": {
+    "explorer": "geri-donusum-kasif",
+    "builder": "geri-donusum-yapici",
+    "developer": "geri-donusum-gelistirici"
+  },
+  "completionCriteria": [
+    "Modeli eğit ve test verisiyle değerlendir.",
+    "En az iki farklı modeli ya da özellik setini karşılaştır.",
+    "Yapıcı ve Geliştirici seviyelerinde: Colab Lab'da daha büyük bir veriyle model eğit ve raporunu içe aktar.",
+    "Modelin hatalı tahminlerini incele.",
+    "Modelin neden hata yaptığını kendi sözlerinle açıkla."
+  ],
+  "skills": [
+    "veri-ve-etiketler",
+    "siniflandirma",
+    "model-egitimi",
+    "model-degerlendirme",
+    "ozellik-secimi",
+    "elestirel-dusunme"
+  ],
+  "limitations": [
+    "Veri seti eğitim amacıyla bilgisayarla üretildi (sentetik).",
+    "Model fotoğraf görmez, yalnızca sayısal ölçümleri kullanır. Bu proje görüntü tanıma değildir.",
+    "Gerçek bir makinede sensörler hatalı ölçüm yapabilir ve nesneler çok daha çeşitlidir.",
+    "Colab raporu senin Colab oturumunda üretilir ve dosya olarak yüklenir; AI Atölye eğitimi kendisi doğrulamaz."
+  ]
+}

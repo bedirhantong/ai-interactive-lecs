@@ -1,0 +1,26 @@
+{
+  "name": "ai-atolye",
+  "private": true,
+  "description": "AI Atölye: interactive AI lab for students in Türkiye. Convenience scripts; each app has its own toolchain.",
+  "scripts": {
+    "dev": "npm --prefix apps/web run dev",
+    "build": "npm --prefix apps/web run build",
+    "test": "npm --prefix apps/web test && npm run test:api",
+    "test:web": "npm --prefix apps/web test",
+    "test:e2e": "npm --prefix apps/web run test:e2e",
+    "test:api": "cd apps/api && .venv/bin/python -m pytest -q",
+    "api": "cd apps/api && .venv/bin/uvicorn app.main:app --reload --port 8000",
+    "colab:build": "python3 scripts/build_colab_notebooks.py",
+    "colab:verify": ".venv-notebooks/bin/python scripts/verify_colab_notebook.py",
+    "datasets": "python3 scripts/generate_datasets.py",
+    "db:up": "docker compose up -d --wait db",
+    "db:down": "docker compose down",
+    "db:migrate": "cd apps/api && .venv/bin/alembic upgrade head",
+    "test:api:pg": "cd apps/api && ATOLYE_TEST_DATABASE_URL=postgresql+psycopg://atolye:atolye@localhost:5433/atolye_test .venv/bin/python -m pytest -q",
+    "lint:api": "cd apps/api && .venv/bin/ruff check . && .venv/bin/ruff format --check .",
+    "format:api": "cd apps/api && .venv/bin/ruff check . --fix && .venv/bin/ruff format .",
+    "prod:up": "docker compose -f deploy/compose.prod.yml --env-file deploy/.env.prod up -d --build --wait",
+    "prod:down": "docker compose -f deploy/compose.prod.yml --env-file deploy/.env.prod down",
+    "prod:logs": "docker compose -f deploy/compose.prod.yml --env-file deploy/.env.prod logs -f --tail 100"
+  }
+}

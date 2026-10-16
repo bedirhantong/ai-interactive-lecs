@@ -1,0 +1,21 @@
+{
+  "id": "gercek-ai-projeleri",
+  "order": 4,
+  "title": "Gerçek AI Projeleri",
+  "description": "Öğrendiklerini gerçek hayattan problemlerde kullan. Bu yol hazırlanıyor.",
+  "levels": ["builder", "developer"],
+  "modules": [
+    {
+      "id": "proje-atolyesi",
+      "title": "Proje atölyesi",
+      "description": "Her proje bir problemle başlar ve bir değerlendirmeyle biter.",
+      "items": [
+        { "kind": "planned", "title": "Görüntü sınıflandırma", "level": "developer" },
+        { "kind": "planned", "title": "Metinlerde duygu analizi", "level": "developer" },
+        { "kind": "planned", "title": "Hava durumu tahmini", "level": "builder" },
+        { "kind": "planned", "title": "Toplu taşıma gecikmesi tahmini", "level": "developer" },
+        { "kind": "planned", "title": "Model adaleti ve değerlendirme", "level": "builder" }
+      ]
+    }
+  ]
+}

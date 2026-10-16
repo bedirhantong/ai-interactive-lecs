@@ -1,0 +1,27 @@
+# One origin for everything: the web app and the API share a domain, so session
+# cookies are first-party and no cross-site CORS is needed.
+# HTTPS certificates are obtained automatically (Let's Encrypt for a real domain,
+# a local CA for "localhost").
+{$SITE_ADDRESS} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

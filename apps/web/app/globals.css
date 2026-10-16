@@ -1,0 +1,283 @@
+@import "tailwindcss";
+@import "katex/dist/katex.min.css";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  color-scheme: light;
+  --bg: #f6f5f1;
+  --surface: #ffffff;
+  --surface-2: #f0eee8;
+  --surface-3: #e8e5dc;
+  --border: #e0ddd3;
+  --border-strong: #c9c5b8;
+  --text: #1a1c23;
+  --muted: #5b5f6d;
+  --subtle: #858a97;
+
+  --brand: #0d7a63;
+  --brand-strong: #095c4b;
+  --brand-soft: #e2f2ec;
+  --brand-contrast: #ffffff;
+  --accent: #e8590c;
+  --accent-soft: #fff0e3;
+
+  --success: #2b8a3e;
+  --success-soft: #e7f5ea;
+  --danger: #c92a2a;
+  --danger-soft: #fdeceb;
+  --warning: #b35c00;
+  --warning-soft: #fff4dc;
+  --info: #1971c2;
+  --info-soft: #e7f1fb;
+
+  --cell-explanation: #868e96;
+  --cell-code: #4263eb;
+  --cell-experiment: #0d7a63;
+  --cell-dataset: #d9480f;
+  --cell-training: #7048e8;
+  --cell-evaluation: #2b8a3e;
+  --cell-challenge: #c2255c;
+  --cell-reflection: #1098ad;
+  --cell-colab: #e67700;
+
+  --code-bg: #fbfaf7;
+  --shadow: 0 1px 2px rgb(26 28 35 / 0.05), 0 4px 16px -8px rgb(26 28 35 / 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #111318;
+    --surface: #191c23;
+    --surface-2: #20242d;
+    --surface-3: #2a2f3a;
+    --border: #2c313c;
+    --border-strong: #3d4351;
+    --text: #e8e9ed;
+    --muted: #a0a5b2;
+    --subtle: #7d8391;
+    --brand: #3cc4a0;
+    --brand-strong: #6fd8bb;
+    --brand-soft: #173a31;
+    --brand-contrast: #0b1f1a;
+    --accent: #ff922b;
+    --accent-soft: #3a2614;
+    --success: #51cf66;
+    --success-soft: #16301d;
+    --danger: #ff6b6b;
+    --danger-soft: #3a1b1b;
+    --warning: #fcc419;
+    --warning-soft: #352a10;
+    --info: #4dabf7;
+    --info-soft: #14283b;
+    --cell-explanation: #868e96;
+    --cell-code: #748ffc;
+    --cell-experiment: #3cc4a0;
+    --cell-dataset: #ff8a4c;
+    --cell-training: #9775fa;
+    --cell-evaluation: #51cf66;
+    --cell-challenge: #f06595;
+    --cell-reflection: #3bc9db;
+    --cell-colab: #ffa94d;
+    --code-bg: #15181e;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 6px 20px -10px rgb(0 0 0 / 0.5);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111318;
+  --surface: #191c23;
+  --surface-2: #20242d;
+  --surface-3: #2a2f3a;
+  --border: #2c313c;
+  --border-strong: #3d4351;
+  --text: #e8e9ed;
+  --muted: #a0a5b2;
+  --subtle: #7d8391;
+  --brand: #3cc4a0;
+  --brand-strong: #6fd8bb;
+  --brand-soft: #173a31;
+  --brand-contrast: #0b1f1a;
+  --accent: #ff922b;
+  --accent-soft: #3a2614;
+  --success: #51cf66;
+  --success-soft: #16301d;
+  --danger: #ff6b6b;
+  --danger-soft: #3a1b1b;
+  --warning: #fcc419;
+  --warning-soft: #352a10;
+  --info: #4dabf7;
+  --info-soft: #14283b;
+  --cell-explanation: #868e96;
+  --cell-code: #748ffc;
+  --cell-experiment: #3cc4a0;
+  --cell-dataset: #ff8a4c;
+  --cell-training: #9775fa;
+  --cell-evaluation: #51cf66;
+  --cell-challenge: #f06595;
+  --cell-reflection: #3bc9db;
+  --cell-colab: #ffa94d;
+  --code-bg: #15181e;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 6px 20px -10px rgb(0 0 0 / 0.5);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-contrast: var(--brand-contrast);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-code-bg: var(--code-bg);
+  --font-sans: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-code), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --shadow-card: var(--shadow);
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--brand) 25%, transparent);
+}
+
+/* Range inputs: large, accessible thumb, brand coloured. */
+input[type="range"] {
+  accent-color: var(--brand);
+  height: 1.75rem;
+  cursor: pointer;
+}
+
+/* Markdown prose used in explanation cells. */
+.prose-atolye {
+  line-height: 1.7;
+  color: var(--text);
+}
+.prose-atolye h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.6rem;
+}
+.prose-atolye h3 {
+  font-size: 1.08rem;
+  font-weight: 650;
+  margin: 1rem 0 0.4rem;
+}
+.prose-atolye p {
+  margin: 0.55rem 0;
+}
+.prose-atolye ul,
+.prose-atolye ol {
+  margin: 0.5rem 0;
+  padding-left: 1.4rem;
+}
+.prose-atolye ul {
+  list-style: disc;
+}
+.prose-atolye ol {
+  list-style: decimal;
+}
+.prose-atolye li {
+  margin: 0.2rem 0;
+}
+.prose-atolye blockquote {
+  border-left: 3px solid var(--brand);
+  background: var(--brand-soft);
+  padding: 0.6rem 0.9rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+  margin: 0.8rem 0;
+}
+.prose-atolye code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 0.3rem;
+  padding: 0.05rem 0.3rem;
+}
+.prose-atolye pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  padding: 0.8rem 1rem;
+  overflow-x: auto;
+  margin: 0.7rem 0;
+}
+.prose-atolye pre code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+.prose-atolye table {
+  border-collapse: collapse;
+  margin: 0.7rem 0;
+  font-size: 0.95em;
+}
+.prose-atolye th,
+.prose-atolye td {
+  border: 1px solid var(--border);
+  padding: 0.35rem 0.75rem;
+  text-align: left;
+}
+.prose-atolye th {
+  background: var(--surface-2);
+}
+.prose-atolye strong {
+  font-weight: 650;
+}
+.prose-atolye a {
+  color: var(--brand);
+  text-decoration: underline;
+}
+.prose-atolye .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25rem 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Monaco error line highlight */
+.atolye-error-line {
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+}

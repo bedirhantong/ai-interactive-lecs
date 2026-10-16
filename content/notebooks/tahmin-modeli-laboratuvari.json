@@ -1,0 +1,334 @@
+{
+  "id": "tahmin-modeli-laboratuvari",
+  "version": 1,
+  "title": "Tahmin Modeli Laboratuvarı",
+  "summary": "Sıcaklıktan ayran satışını tahmin et: doğruyu önce elinle ayarla, sonra modeli veriden eğit.",
+  "level": "builder",
+  "labs": [
+    "visual",
+    "python"
+  ],
+  "estimatedMinutes": 35,
+  "objectives": [
+    "İki sayısal değişken arasındaki ilişkiyi grafikte görmek",
+    "Doğrusal bir modelin eğim ve sabitini değiştirerek hatayı azaltmak",
+    "Elle ayarlama ile veriden eğitim arasındaki farkı açıklamak",
+    "Hata ölçüsünü (MSE) Python'da kendin hesaplamak"
+  ],
+  "datasets": [
+    "ayran-satislari"
+  ],
+  "concepts": [
+    {
+      "term": "Doğrusal model",
+      "definition": "tahmin = eğim × x + sabit. Grafikte düz bir çizgidir."
+    },
+    {
+      "term": "Eğim",
+      "definition": "x bir birim artınca tahminin ne kadar değiştiği."
+    },
+    {
+      "term": "Sabit",
+      "definition": "x sıfırken modelin tahmini; doğrunun dikey ekseni kestiği yer."
+    },
+    {
+      "term": "MSE",
+      "definition": "Ortalama kare hata: her tahminin hatasının karesinin ortalaması. Küçük olması iyidir."
+    },
+    {
+      "term": "Gradyan inişi",
+      "definition": "Hatayı azaltan yöne küçük adımlarla ilerleyerek modeli eğitme yöntemi."
+    },
+    {
+      "term": "Dışdeğerleme",
+      "definition": "Modeli, eğitim verisinin aralığı dışındaki değerler için kullanmak. Risklidir."
+    }
+  ],
+  "cells": [
+    {
+      "id": "problem",
+      "type": "explanation",
+      "section": "Problem",
+      "markdown": [
+        "## Kantin kaç ayran hazırlamalı?",
+        "",
+        "Okul kantini her sabah ayran sipariş ediyor. Az sipariş ederse ayran biter, çok ederse israf olur. Görevli şöyle düşünüyor: *\"Hava ısındıkça daha çok ayran satılıyor gibi.\"*",
+        "",
+        "Bu laboratuvarda sıcaklıktan satışı tahmin eden bir **model** kuracaksın."
+      ]
+    },
+    {
+      "id": "veri-notu",
+      "type": "explanation",
+      "variant": "data",
+      "section": "Problem",
+      "markdown": "**Veri hakkında:** Bu veri seti eğitim amacıyla bilgisayarla üretilmiştir (sentetik). Gerçek bir kantinin satışları değildir ama gerçek hayattaki ilişkiye benzer davranır."
+    },
+    {
+      "id": "veriye-bak",
+      "type": "dataset",
+      "section": "Problem",
+      "title": "30 günlük kayıt",
+      "datasetId": "ayran-satislari",
+      "instructions": "Tabloyu sıcaklığa göre sırala. Sıcak günlerde satış gerçekten artıyor mu?",
+      "showDistribution": false
+    },
+    {
+      "id": "elle-ayarla",
+      "type": "experiment",
+      "section": "Elle ayarla",
+      "title": "Doğruyu sen yerleştir",
+      "required": true,
+      "skills": [
+        "dogrusal-regresyon"
+      ],
+      "instructions": [
+        "Eğim ve sabit kaydırıcılarıyla doğruyu noktalara yaklaştır. Her noktadan doğruya inen kırmızı çizgiler **hatayı** gösterir.",
+        "",
+        "**Bir tahminde bulun:** Eğimi artırınca doğru nasıl dönüyor? Hata (MSE) nasıl değişiyor?"
+      ],
+      "experiment": {
+        "kind": "linear-regression",
+        "datasetId": "ayran-satislari",
+        "x": "sicaklik",
+        "y": "ayran",
+        "modes": [
+          "manual"
+        ],
+        "slope": {
+          "min": 0,
+          "max": 8,
+          "step": 0.1,
+          "initial": 1
+        },
+        "intercept": {
+          "min": -40,
+          "max": 120,
+          "step": 1,
+          "initial": 50
+        },
+        "predictAt": 30,
+        "goal": {
+          "maxMse": 180
+        }
+      },
+      "showCode": true,
+      "allowEditableCode": true,
+      "minChanges": 3,
+      "hints": [
+        "Önce eğimi ayarla: doğru noktaların yükselişini takip etsin.",
+        "Sonra sabiti değiştirerek doğruyu yukarı-aşağı kaydır. Noktaların yarısı üstte, yarısı altta kalsın.",
+        "Eğim 4 civarında, sabit 15–25 arasında iyi bir başlangıç olabilir."
+      ]
+    },
+    {
+      "id": "hedef-mse",
+      "type": "challenge",
+      "section": "Elle ayarla",
+      "title": "Görev: hatayı küçült",
+      "required": true,
+      "skills": [
+        "dogrusal-regresyon"
+      ],
+      "instructions": "Yukarıdaki deneyde, yalnızca kaydırıcıları kullanarak MSE değerini **180'in altına** indir.",
+      "challenge": {
+        "kind": "experiment-goal",
+        "targetCellId": "elle-ayarla",
+        "goal": {
+          "metric": "mse",
+          "max": 180,
+          "mode": "manual"
+        }
+      },
+      "hints": [
+        "Kırmızı hata çizgilerinin toplam uzunluğunu küçültmeye çalış.",
+        "Doğru noktaların hep üstünde ya da hep altında kalıyorsa sabiti değiştir.",
+        "Eğim 4.1 ve sabit 18 civarını dene, sonra küçük ayarlar yap."
+      ]
+    },
+    {
+      "id": "egitim-aciklama",
+      "type": "explanation",
+      "section": "Veriden öğren",
+      "markdown": [
+        "## Bilgisayar doğruyu nasıl bulur?",
+        "",
+        "Sen doğruyu gözünle ayarladın. Bir makine öğrenmesi modeli ise **gradyan inişi** ile öğrenir:",
+        "",
+        "1. Bir doğruyla başla.",
+        "2. Hatayı hesapla: $\\text{MSE} = \\frac{1}{n}\\sum_{i=1}^{n} (\\text{tahmin}_i - \\text{gerçek}_i)^2$",
+        "3. Eğimi ve sabiti, hatayı **azaltan** yöne küçük bir adım kadar değiştir.",
+        "4. Hata artık küçülmeyene kadar tekrarla.",
+        "",
+        "Aşağıdaki deneyde bu adımlar **gerçekten** hesaplanıyor; bu bir animasyon değil. Her adımda grafikteki doğru ve hata eğrisi güncellenir."
+      ]
+    },
+    {
+      "id": "veriden-ogren",
+      "type": "experiment",
+      "section": "Veriden öğren",
+      "title": "Modeli veriden eğit",
+      "required": true,
+      "skills": [
+        "model-egitimi",
+        "dogrusal-regresyon"
+      ],
+      "instructions": "**Eğit** düğmesiyle gradyan inişini başlat. Öğrenme oranını değiştirip tekrar dene: çok büyük olursa ne oluyor?",
+      "experiment": {
+        "kind": "linear-regression",
+        "datasetId": "ayran-satislari",
+        "x": "sicaklik",
+        "y": "ayran",
+        "modes": [
+          "fit"
+        ],
+        "slope": {
+          "min": 0,
+          "max": 8,
+          "step": 0.1,
+          "initial": 1
+        },
+        "intercept": {
+          "min": -40,
+          "max": 120,
+          "step": 1,
+          "initial": 50
+        },
+        "predictAt": 30
+      },
+      "showCode": true,
+      "allowEditableCode": false,
+      "minChanges": 2,
+      "hints": [
+        "Eğit düğmesine bastıktan sonra hata eğrisinin nasıl düştüğüne bak.",
+        "Öğrenme oranını 1.0'ın üstüne çıkarıp tekrar eğit. Hata düşüyor mu, büyüyor mu?"
+      ]
+    },
+    {
+      "id": "kod-acikla",
+      "type": "explanation",
+      "section": "Kodla",
+      "markdown": [
+        "## Şimdi kodla",
+        "",
+        "Deneylerin **Python** sekmesinde, kaydırıcıların ürettiği kodu gördün. Aşağıdaki hücre aynı veriyi dosyadan okuyor. `egim` ve `sabit` değerlerini değiştirip çalıştır: sonuç, deneydeki MSE ile aynı mı?"
+      ]
+    },
+    {
+      "id": "kod-mse",
+      "type": "code",
+      "section": "Kodla",
+      "title": "Veriyi dosyadan oku",
+      "required": true,
+      "skills": [
+        "python-temelleri",
+        "dogrusal-regresyon"
+      ],
+      "source": [
+        "import csv",
+        "",
+        "with open(\"/data/ayran-satislari.csv\", encoding=\"utf-8\") as dosya:",
+        "    satirlar = list(csv.DictReader(dosya))",
+        "",
+        "sicaklik = [float(s[\"sicaklik\"]) for s in satirlar]",
+        "ayran = [float(s[\"ayran\"]) for s in satirlar]",
+        "",
+        "egim = 4.0",
+        "sabit = 20.0",
+        "",
+        "hatalar = []",
+        "for x, y in zip(sicaklik, ayran):",
+        "    tahmin = egim * x + sabit",
+        "    hatalar.append((tahmin - y) ** 2)",
+        "",
+        "print(\"Gün sayısı:\", len(sicaklik))",
+        "print(\"MSE:\", round(sum(hatalar) / len(hatalar), 2))"
+      ],
+      "completion": {
+        "kind": "output-match",
+        "pattern": "MSE:",
+        "description": "Kod çalışıp MSE değerini yazdırmalı."
+      },
+      "hints": [
+        "Dosya yolu /data/ayran-satislari.csv olarak hazır. Sadece egim ve sabit satırlarını değiştir."
+      ]
+    },
+    {
+      "id": "mse-yaz",
+      "type": "challenge",
+      "section": "Kodla",
+      "title": "Görev: hata fonksiyonunu yaz",
+      "required": true,
+      "skills": [
+        "algoritma-kodlama",
+        "dogrusal-regresyon"
+      ],
+      "instructions": [
+        "Artık görsel yardım yok. `ortalama_kare_hata(xler, yler, egim, sabit)` fonksiyonunu kendin yaz.",
+        "",
+        "Her `x` için tahmin `egim * x + sabit` olsun; hatanın karesini al; ortalamasını döndür."
+      ],
+      "challenge": {
+        "kind": "code",
+        "starterCode": [
+          "def ortalama_kare_hata(xler, yler, egim, sabit):",
+          "    # Buraya kodunu yaz",
+          "    pass",
+          "",
+          "",
+          "print(ortalama_kare_hata([1, 2, 3], [2, 4, 6], 2, 0))  # 0.0 olmalı"
+        ],
+        "tests": [
+          {
+            "name": "Kusursuz doğrunun hatası 0",
+            "code": "assert ortalama_kare_hata([1, 2, 3], [2, 4, 6], 2, 0) == 0"
+          },
+          {
+            "name": "Her tahmin 1 fazlaysa hata 1",
+            "code": "sonuc = ortalama_kare_hata([1, 2, 3], [2, 4, 6], 2, 1)\nassert abs(sonuc - 1) < 1e-9, f'Beklenen 1, gelen {sonuc}'"
+          },
+          {
+            "name": "Hatanın karesi alınmalı",
+            "code": "sonuc = ortalama_kare_hata([0, 0], [1, -1], 0, 0)\nassert abs(sonuc - 1) < 1e-9, f'Beklenen 1, gelen {sonuc}. Negatif hatalar karesi alınınca pozitif olur.'"
+          },
+          {
+            "name": "Farklı uzunlukta veriyle doğru ortalama",
+            "code": "sonuc = ortalama_kare_hata([0, 1, 2, 3], [0, 0, 0, 0], 1, 0)\nassert abs(sonuc - 3.5) < 1e-9, f'Beklenen 3.5, gelen {sonuc}'",
+            "hidden": true
+          }
+        ],
+        "solution": [
+          "def ortalama_kare_hata(xler, yler, egim, sabit):",
+          "    toplam = 0",
+          "    for x, y in zip(xler, yler):",
+          "        hata = (egim * x + sabit) - y",
+          "        toplam += hata ** 2",
+          "    return toplam / len(xler)"
+        ],
+        "followUp": "Yeni görev: aynı imzayla `ortalama_mutlak_hata` fonksiyonunu yaz (karesi yerine mutlak değer: `abs(hata)`). İki ölçüyü ayran verisinde karşılaştır."
+      },
+      "hints": [
+        "Bir önceki kod hücresindeki döngü, ihtiyacın olan adımların neredeyse hepsini içeriyor.",
+        "`zip(xler, yler)` iki listeyi birlikte dolaşmanı sağlar. Toplamı biriktirip sonunda `len(xler)` ile böl.",
+        "Benzer örnek: `def toplam_kare(liste):` içinde `t = 0`, döngüde `t += x ** 2`, sonda `return t`."
+      ]
+    },
+    {
+      "id": "disdegerleme",
+      "type": "reflection",
+      "section": "Düşün",
+      "title": "45 °C'de ne olur?",
+      "required": true,
+      "skills": [
+        "elestirel-dusunme"
+      ],
+      "prompt": "Modelin 45 °C için yaptığı tahmine güvenir misin? Veri setindeki sıcaklıkların aralığını düşünerek açıkla.",
+      "guidingQuestions": [
+        "Veri setindeki en düşük ve en yüksek sıcaklık kaç?",
+        "Kantinde satılabilecek ayranın bir üst sınırı var mı?",
+        "Elle ayarladığın doğru ile eğitilen doğru ne kadar farklıydı?"
+      ],
+      "minLength": 60
+    }
+  ]
+}
