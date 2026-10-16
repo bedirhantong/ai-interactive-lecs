@@ -12,6 +12,7 @@ import { colabOpenUrl, templateDownloadUrl } from "@/lib/labs/colab/launcher";
 import { type TrainingReport, MAX_REPORT_BYTES, parseTrainingReport } from "@/lib/labs/colab/report";
 import type { ColabState, TrainingState } from "@/lib/notebook/types";
 import { cn } from "@/lib/cn";
+import { queueReport } from "@/lib/sync/store";
 import { CellFrame } from "../cell-frame";
 import { useCellState, useNotebook, useNotebookStore } from "../context";
 import { Markdown } from "../markdown";
@@ -98,6 +99,7 @@ export function ColabCell({ cell }: { cell: Cell }) {
         update({ report, warnings, fileName, importedAt: new Date().toISOString() });
         const selected = report.experiments.find((e) => e.id === report.selected_experiment);
         store.getState().addEvidence(cell.id, "report-imported", `${algoName(selected?.algorithm ?? "")}: test ${pct(report.test_metrics.accuracy)}`);
+        queueReport(store.getState().lesson.id, report); // signed in: also stored on the server for the teacher
       }} />
 
       {state.report && <ReportView cell={cell} report={state.report} warnings={state.warnings} />}

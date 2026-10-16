@@ -208,3 +208,17 @@ export function datasetsForLesson(lesson: Lesson): Record<string, Dataset> {
   const { datasets } = loadContent();
   return Object.fromEntries(lesson.datasets.map((id) => [id, datasets.get(id)!]));
 }
+
+/** Compact lesson structure for the client (sync rebuilds progress from downloaded notebooks). */
+export function lessonIndex(): Record<string, { version: number; requiredIds: string[]; cells: Record<string, { required: boolean; skills: string[] }> }> {
+  return Object.fromEntries(
+    [...loadContent().lessons.values()].map((l) => [
+      l.id,
+      {
+        version: l.version,
+        requiredIds: l.cells.filter((c) => c.required).map((c) => c.id),
+        cells: Object.fromEntries(l.cells.filter((c) => c.required || c.skills.length).map((c) => [c.id, { required: c.required, skills: c.skills }])),
+      },
+    ]),
+  );
+}

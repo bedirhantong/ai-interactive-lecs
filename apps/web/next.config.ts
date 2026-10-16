@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
   // Self-contained server (.next/standalone) for the Docker image.
   output: "standalone",
   poweredByHeader: false,
+  // The browser always calls the API on the same origin (/api/...), so session cookies are
+  // first-party. In production Caddy routes /api before it reaches Next.js; in development
+  // Next.js proxies it to the local API.
+  async rewrites() {
+    return [{ source: "/api/:path*", destination: `${process.env.API_INTERNAL_URL ?? "http://localhost:8000"}/api/:path*` }];
+  },
   outputFileTracingRoot: repoRoot,
   outputFileTracingIncludes: { "/**": ["../../content/**/*"] },
   turbopack: {

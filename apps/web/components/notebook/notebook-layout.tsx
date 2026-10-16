@@ -26,6 +26,7 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 import { type Cell, LEVEL_LABELS } from "@/lib/content/schema";
 import { runAllCodeCells } from "@/lib/notebook/actions";
 import { cn } from "@/lib/cn";
+import { SyncStatus } from "../sync/sync-status";
 import { AssistantPanel } from "./assistant-panel";
 import { CELL_META } from "./cell-meta";
 import { ChallengeCell } from "./cells/challenge-cell";
@@ -204,6 +205,7 @@ function Toolbar({ nav, onOpen }: { nav: NotebookNav; onOpen: (d: "outline" | "a
         <Badge tone="brand">{LEVEL_LABELS[lesson.level]}</Badge>
       </span>
       <SaveIndicator />
+      <SyncStatus className="hidden lg:inline-flex" />
       <RuntimeChip />
       <NotebookMenu />
       <Button variant="ghost" size="sm" className="xl:hidden" onClick={() => onOpen("assistant")} aria-label="Yardımcıyı aç">

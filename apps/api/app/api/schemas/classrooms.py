@@ -52,3 +52,36 @@ class AssignmentOut(BaseModel):
     @classmethod
     def of(cls, a: Assignment) -> "AssignmentOut":
         return cls(id=a.id, lesson_id=a.lesson_id, due_at=a.due_at)
+
+
+class StudentSummaryOut(BaseModel):
+    user_id: str
+    display_name: str
+    username: str | None
+    status: MembershipStatus
+    last_activity_at: datetime | None
+    completed_lessons: list[str]
+    challenges_passed: int
+    reports: int
+    latest_test_accuracy: float | None
+
+    @classmethod
+    def of(cls, s) -> "StudentSummaryOut":
+        return cls(
+            user_id=str(s.user.id),
+            display_name=s.user.display_name,
+            username=s.user.username,
+            status=s.status,
+            last_activity_at=s.last_activity_at,
+            completed_lessons=s.completed_lessons,
+            challenges_passed=s.challenges_passed,
+            reports=s.reports,
+            latest_test_accuracy=s.latest_test_accuracy,
+        )
+
+
+class ReflectionOut(BaseModel):
+    lesson_id: str
+    cell_id: str
+    text: str
+    submitted_at: str | None

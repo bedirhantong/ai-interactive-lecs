@@ -6,7 +6,17 @@ from typing import Annotated
 from fastapi import APIRouter, Query, status
 
 from app.api.deps import ClassroomSvc, CurrentUser, ReviewSvc, TeacherUser
-from app.api.schemas.classrooms import AssignmentIn, AssignmentOut, ClassroomIn, ClassroomOut, JoinIn, JoinOut, MemberOut
+from app.api.schemas.classrooms import (
+    AssignmentIn,
+    AssignmentOut,
+    ClassroomIn,
+    ClassroomOut,
+    JoinIn,
+    JoinOut,
+    MemberOut,
+    ReflectionOut,
+    StudentSummaryOut,
+)
 from app.api.schemas.learning import EventOut, ReportOut
 from app.core.responses import ERROR_RESPONSES, ApiResponse, Pagination, ok
 from app.models import Role
@@ -73,3 +83,19 @@ def student_progress(
 @router.get("/{classroom_id}/students/{user_id}/reports", response_model=ApiResponse[list[ReportOut]], summary="Öğrencinin Colab raporları")
 def student_reports(classroom_id: int, user_id: uuid.UUID, teacher: TeacherUser, review: ReviewSvc):
     return ok([ReportOut.model_validate(r) for r in review.student_reports(teacher, classroom_id, user_id)])
+
+
+@router.get("/{classroom_id}/overview", response_model=ApiResponse[list[StudentSummaryOut]], summary="Sınıf özeti (öğrenci başına ilerleme)")
+def overview(classroom_id: int, teacher: TeacherUser, review: ReviewSvc):
+    """One row per member: last activity, completed lessons, passed challenges, Colab reports. Pending members show no data."""
+    return ok([StudentSummaryOut.of(s) for s in review.overview(teacher, classroom_id)])
+
+
+@router.get("/{classroom_id}/students/{user_id}/reflections", response_model=ApiResponse[list[ReflectionOut]], summary="Öğrencinin yansıtma yazıları")
+def student_reflections(classroom_id: int, user_id: uuid.UUID, teacher: TeacherUser, review: ReviewSvc):
+    return ok(
+        [
+            ReflectionOut(lesson_id=r.lesson_id, cell_id=r.cell_id, text=r.text, submitted_at=r.submitted_at)
+            for r in review.student_reflections(teacher, classroom_id, user_id)
+        ]
+    )

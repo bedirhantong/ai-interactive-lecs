@@ -59,7 +59,8 @@ No GPU servers, no per-student kernels, no Kubernetes, no Python execution in AP
 - [x] Alembic migrations; tests on SQLite
 - [x] Verify against PostgreSQL 17 (Docker Compose, all tests + migrations)
 - [x] Classroom API: join code, teacher-approved membership, assignments, progress and report review endpoints
-- [ ] Teacher UI
+- [x] Teacher UI (classes, printable student credentials, password reset, approvals, assignments, overview, evidence, reflections, Colab reports)
+- [x] Web ↔ API: sign-in, forced password change, offline-first sync with conflict prompt, assignments for students, account settings (export, access log, deletion)
 - [x] Authorization tests: students only see their own data, teachers only their classrooms
 
 ## Phase 7 — Production preparation

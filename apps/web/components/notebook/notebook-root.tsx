@@ -10,8 +10,11 @@ import type { Completion, EvidenceKind, SavedNotebook } from "@/lib/notebook/typ
 import { useProgress } from "@/lib/progress/store";
 import { PYODIDE_INDEX_URL, PYTHON_WORKER_URL } from "@/lib/runtime/config";
 import { PythonRuntime } from "@/lib/runtime/python-runtime";
+import { useSession } from "@/lib/session/store";
 import { notebookKey, readJson, writeJson } from "@/lib/storage";
+import { queueEvent, syncActive, syncEngine, useSync } from "@/lib/sync/store";
 import { useIsClient } from "@/lib/use-is-client";
+import { ConflictBanner } from "../sync/conflict-banner";
 import { NotebookContext } from "./context";
 import { NotebookLayout, type NotebookNav } from "./notebook-layout";
 
@@ -64,6 +67,7 @@ function ClientNotebook({ lesson, datasets, colabTemplates, nav }: NotebookProps
         onCellCompleted: (cell, completion) => onCellCompleted(lesson, created, cell, completion),
         onEvidence: (event) => {
           if (FEED_KINDS.has(event.kind)) useProgress.getState().recordEvent(event);
+          queueEvent(event);
         },
       },
     });
@@ -102,6 +106,7 @@ function ClientNotebook({ lesson, datasets, colabTemplates, nav }: NotebookProps
       timer = null;
       const ok = writeJson(notebookKey(lesson.id), store.getState().toSaved());
       store.getState().setSaveStatus(ok ? "saved" : "error", new Date().toISOString());
+      if (ok) useSync.getState().notebookChanged(lesson.id);
     };
     const unsubscribe = store.subscribe((s, prev) => {
       if (s.cells === prev.cells && s.completions === prev.completions && s.hintLevels === prev.hintLevels && s.evidence === prev.evidence) {
@@ -135,14 +140,66 @@ function ClientNotebook({ lesson, datasets, colabTemplates, nav }: NotebookProps
   );
 }
 
+function Loading({ text }: { text: string }) {
+  return (
+    <div className="flex h-dvh items-center justify-center text-sm text-muted" aria-busy="true">
+      {text}
+    </div>
+  );
+}
+
+/**
+ * For signed-in students, makes sure the local copy is the latest before the notebook opens
+ * (another device may have saved). Offline or slow: opens the local copy after a short wait.
+ */
+function SyncedNotebook(props: NotebookProps) {
+  const status = useSession((s) => s.status);
+  const [checked, setChecked] = useState(false);
+  const [reloading, setReloading] = useState(false);
+  const [mount, setMount] = useState(0);
+  const lessonId = props.lesson.id;
+  const mustCheck = status !== "unknown" && syncActive();
+
+  useEffect(() => {
+    if (!mustCheck || checked) return;
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      useSync.getState().refresh();
+      setChecked(true);
+    };
+    const timeout = setTimeout(finish, 4000);
+    syncEngine
+      .refreshNotebook(lessonId)
+      .catch(() => undefined)
+      .finally(() => {
+        clearTimeout(timeout);
+        finish();
+      });
+    return () => clearTimeout(timeout);
+  }, [mustCheck, checked, lessonId]);
+
+  const useServerVersion = async () => {
+    setReloading(true); // unmount first, so the open notebook cannot save over the downloaded version
+    await new Promise((r) => setTimeout(r, 0));
+    await useSync.getState().resolve(lessonId, "server");
+    setMount((m) => m + 1);
+    setReloading(false);
+  };
+
+  if (status === "unknown" || (mustCheck && !checked)) return <Loading text="Defter eşitleniyor…" />;
+  if (reloading) return <Loading text="Diğer cihazdaki sürüm açılıyor…" />;
+  return (
+    <>
+      <ClientNotebook key={mount} {...props} />
+      <ConflictBanner lessonId={lessonId} onUseServer={useServerVersion} />
+    </>
+  );
+}
+
 export function NotebookRoot(props: NotebookProps) {
   const isClient = useIsClient();
-  if (!isClient) {
-    return (
-      <div className="flex h-dvh items-center justify-center text-sm text-muted" aria-busy="true">
-        Defter hazırlanıyor…
-      </div>
-    );
-  }
-  return <ClientNotebook {...props} />;
+  if (!isClient) return <Loading text="Defter hazırlanıyor…" />;
+  return <SyncedNotebook {...props} />;
 }

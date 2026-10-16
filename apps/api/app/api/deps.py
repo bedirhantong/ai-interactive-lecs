@@ -107,7 +107,8 @@ def get_classroom_service(db: DB, catalog: CatalogDep, audit: AuditSvc) -> Class
 
 
 def get_review_service(db: DB, audit: AuditSvc) -> ReviewService:
-    return ReviewService(ClassroomAccess(ClassroomRepository(db)), ProgressRepository(db), ReportRepository(db), audit, db)
+    classrooms = ClassroomRepository(db)
+    return ReviewService(ClassroomAccess(classrooms), classrooms, ProgressRepository(db), ReportRepository(db), NotebookRepository(db), audit, db)
 
 
 def get_privacy_service(db: DB, clock: ClockDep, hasher: HasherDep, audit: AuditSvc) -> PrivacyService:

@@ -1,7 +1,9 @@
 "use client";
 
 /**
- * Student progress for demo mode, stored only in this browser.
+ * Student progress, stored in this browser under the current account's
+ * namespace (guest/demo or a signed-in account, see lib/storage.ts). For
+ * signed-in students it is rebuilt from the notebooks synced from the server.
  *
  * All progress here is self-reported: it is computed in the browser and
  * could be altered by the student. It is good for motivation and
@@ -11,7 +13,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { Level } from "@/lib/content/schema";
 import type { EvidenceEvent } from "@/lib/notebook/types";
-import { STORAGE_PREFIX } from "@/lib/storage";
+import { namespacedStorage } from "@/lib/storage";
 
 export type AgeBand = "11-13" | "14-15" | "16-18";
 export type EditorPreference = "monaco" | "basic";
@@ -73,6 +75,13 @@ interface ProgressState {
   }) => { lessonCompleted: boolean };
   recordEvent: (event: EvidenceEvent) => void;
   upsertPortfolio: (entry: PortfolioEntry) => void;
+  /** Merge completions from a notebook downloaded from the server (another device). */
+  mergeNotebook: (args: {
+    lessonId: string;
+    lessonVersion: number;
+    requiredIds: string[];
+    completions: { cellId: string; at: string; evidence: string; required: boolean; skills: string[] }[];
+  }) => void;
   resetAll: () => void;
 }
 
@@ -137,13 +146,47 @@ export const useProgress = create<ProgressState>()(
       upsertPortfolio: (entry) =>
         set((s) => ({ portfolio: { ...s.portfolio, [`${entry.projectId}:${entry.lessonId}`]: entry } })),
 
+      mergeNotebook: ({ lessonId, lessonVersion, requiredIds, completions }) => {
+        if (completions.length === 0) return;
+        const s = get();
+        const earliest = completions.map((c) => c.at).sort()[0];
+        const lesson = s.lessons[lessonId] ?? {
+          lessonVersion,
+          requiredTotal: requiredIds.length,
+          startedAt: earliest,
+          lastOpenedAt: earliest,
+          completedRequired: [],
+          completedAt: null,
+        };
+        const completedRequired = [...new Set([...lesson.completedRequired, ...completions.filter((c) => c.required).map((c) => c.cellId)])];
+        const allDone = requiredIds.length > 0 && requiredIds.every((id) => completedRequired.includes(id));
+        const lastAt = completions.map((c) => c.at).sort().at(-1)!;
+        const skills = { ...s.skills };
+        for (const c of completions) {
+          for (const skill of c.skills) {
+            const list = skills[skill] ?? [];
+            if (!list.some((e) => e.lessonId === lessonId && e.cellId === c.cellId)) {
+              skills[skill] = [...list, { lessonId, cellId: c.cellId, at: c.at, evidence: c.evidence }];
+            }
+          }
+        }
+        set({
+          skills,
+          lessons: {
+            ...s.lessons,
+            [lessonId]: { ...lesson, lessonVersion, requiredTotal: requiredIds.length, completedRequired, completedAt: lesson.completedAt ?? (allDone ? lastAt : null) },
+          },
+        });
+      },
+
       resetAll: () =>
         set({ profile: defaultProfile, lessons: {}, skills: {}, recent: [], portfolio: {}, lastLessonId: null }),
     }),
     {
-      name: `${STORAGE_PREFIX}progress`,
+      // Key "progress" inside the current namespace (guest: "aiatolye:v1:progress", unchanged from before).
+      name: "progress",
       version: 1,
-      storage: createJSONStorage(() => window.localStorage),
+      storage: createJSONStorage(() => namespacedStorage),
       skipHydration: true,
       partialize: ({ profile, lessons, skills, recent, portfolio, lastLessonId }) => ({
         profile,
@@ -156,3 +199,9 @@ export const useProgress = create<ProgressState>()(
     },
   ),
 );
+
+/** After the storage namespace changed (sign-in/out): forget the previous account's state and load the new one. */
+export async function reloadProgressForCurrentAccount() {
+  useProgress.getState().resetAll();
+  await useProgress.persist.rehydrate();
+}

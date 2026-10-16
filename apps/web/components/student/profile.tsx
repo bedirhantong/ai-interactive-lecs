@@ -9,6 +9,8 @@ import { useProgressHydrated } from "@/lib/progress/hydration";
 import { type AgeBand, useProgress } from "@/lib/progress/store";
 import { clearAll } from "@/lib/storage";
 import { LevelPicker } from "./dashboard";
+import { useSession } from "@/lib/session/store";
+import { AccountSettings } from "./account-settings";
 import { downloadJson } from "./download";
 
 const AGE_BANDS: AgeBand[] = ["11-13", "14-15", "16-18"];
@@ -27,6 +29,8 @@ function exportAllData() {
 }
 
 export function ProfileSettings() {
+  const sessionStatus = useSession((s) => s.status);
+  const signedIn = sessionStatus === "authenticated";
   const hydrated = useProgressHydrated();
   const profile = useProgress((s) => s.profile);
   const setProfile = useProgress((s) => s.setProfile);
@@ -39,6 +43,8 @@ export function ProfileSettings() {
   const section = "rounded-2xl border border-border bg-surface p-6 shadow-card";
   return (
     <div className="space-y-6">
+      {signedIn && <AccountSettings />}
+      {!signedIn && (
       <section className={section}>
         <label htmlFor={nameId} className="font-bold">
           Sana nasıl hitap edelim? <span className="font-normal text-muted">(isteğe bağlı)</span>
@@ -53,6 +59,7 @@ export function ProfileSettings() {
           autoComplete="off"
         />
       </section>
+      )}
 
       <section className={section}>
         <h2 className="font-bold">Deneyim seviyesi</h2>
@@ -60,6 +67,7 @@ export function ProfileSettings() {
         <LevelPicker value={profile.level} onPick={(level) => setProfile({ level })} compact />
       </section>
 
+      {!signedIn && (
       <section className={section}>
         <h2 className="font-bold">
           Yaş aralığı <span className="font-normal text-muted">(isteğe bağlı)</span>
@@ -80,6 +88,7 @@ export function ProfileSettings() {
           ))}
         </div>
       </section>
+      )}
 
       <section className={section}>
         <h2 className="font-bold">Görünüm ve editör</h2>
@@ -98,6 +107,7 @@ export function ProfileSettings() {
         </div>
       </section>
 
+      {!signedIn && (
       <section className={section}>
         <h2 className="font-bold">Verilerim</h2>
         <p className="text-sm text-muted">
@@ -137,6 +147,7 @@ export function ProfileSettings() {
         </div>
         {deleted && <p className="mt-2 text-sm text-success" role="status">Verilerin bu tarayıcıdan silindi.</p>}
       </section>
+      )}
     </div>
   );
 }

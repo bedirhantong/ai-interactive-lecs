@@ -86,6 +86,7 @@ export function createNotebookStore(opts: {
         completions: { ...s.completions, ...Object.fromEntries(added.map(([cell, c]) => [cell.id, c])) },
         evidence: [...s.evidence, ...events].slice(-MAX_EVIDENCE),
       });
+      for (const e of events) callbacks.onEvidence?.(e); // e.g. queued for the teacher's view when signed in
       for (const [cell, c] of added) callbacks.onCellCompleted?.(cell, c);
     };
 

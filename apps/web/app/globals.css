@@ -281,3 +281,19 @@ input[type="range"] {
 .atolye-error-line {
   background: color-mix(in srgb, var(--danger) 16%, transparent);
 }
+
+/* Printing student credential cards: only the cards are printed. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+  }
+}

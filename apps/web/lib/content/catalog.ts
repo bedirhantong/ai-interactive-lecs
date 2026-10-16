@@ -20,3 +20,16 @@ export function getCatalog(): Catalog {
     skills: content.skills,
   };
 }
+
+/** Lesson titles and reflection prompts for the teacher pages. */
+export function getTeacherCatalog() {
+  const { lessons } = loadContent();
+  const reflectionPrompts: Record<string, string> = {};
+  for (const lesson of lessons.values()) {
+    for (const cell of lesson.cells) if (cell.type === "reflection") reflectionPrompts[`${lesson.id}:${cell.id}`] = cell.prompt;
+  }
+  return {
+    lessons: [...lessons.values()].map((l) => ({ id: l.id, title: l.title, level: l.level })),
+    reflectionPrompts,
+  };
+}

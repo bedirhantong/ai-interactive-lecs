@@ -12,12 +12,13 @@ Komutların hepsi **proje klasöründe** (`ai-interactive-lecs/`) çalıştırı
    Öğrenci / öğretmen                    Geliştirici
           │                                     │
           ▼                                     ▼
- ┌──────────────────┐   (henüz bağlı değil) ┌─────────┐
- │  Web arayüzü     │ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ▶│ Postman │
- │  localhost:3000  │                        └────┬────┘
- │  npm run dev     │                             │ HTTP istekleri
- └──────────────────┘                             ▼
-                                         ┌──────────────────┐
+ ┌──────────────────┐                      ┌─────────┐
+ │  Web arayüzü     │                      │ Postman │
+ │  localhost:3000  │                      └────┬────┘
+ │  npm run dev     │                           │ HTTP istekleri
+ └────────┬─────────┘                           │
+          │ /api/... (Next.js yönlendirir)      ▼
+          └────────────────────────────▶ ┌──────────────────┐
                                          │  API (backend)   │  ← npm run api
                                          │  localhost:8000  │    (Mac'te doğrudan çalışır)
                                          └────────┬─────────┘
@@ -44,10 +45,17 @@ Komutların hepsi **proje klasöründe** (`ai-interactive-lecs/`) çalıştırı
 |---|:-:|:-:|:-:|
 | Postman ile API'yi denemek | ✔ | ✔ | — |
 | DBeaver ile tabloları görmek | ✔ | — | — |
-| Web arayüzünü kullanmak (şu an) | — | — | ✔ |
+| Web arayüzünü hesapsız (demo) kullanmak | — | — | ✔ |
+| Giriş, öğretmen paneli, senkronizasyon | ✔ | ✔ | ✔ |
 | Backend testleri (`npm run test:api:pg`) | ✔ | — | — |
 
-**Önemli:** Web arayüzü **şu an API'ye bağlı değil**. İlerlemeyi tarayıcının hafızasına (localStorage) yazar ve Python'u tarayıcıda çalıştırır. Bu bilinçli bir sıra: önce backend sağlamlaştırılıyor, sonra web arayüzü API'ye bağlanacak (Web → API → PostgreSQL).
+**Web arayüzü ve API nasıl bağlı?** Tarayıcı API'yi her zaman aynı adres altında çağırır (`/api/...`). Geliştirmede Next.js bu istekleri `localhost:8000`'e yönlendirir (`next.config.ts`, farklı bir adres için `API_INTERNAL_URL`); üretimde bunu Caddy yapar. Böylece oturum çerezi sorunsuz çalışır.
+
+- **API çalışmıyorsa** web arayüzü hesapsız (demo) modda açılır; çalışma tarayıcıda kalır.
+- **Giriş yapılmışsa** çalışma önce tarayıcıya kaydedilir, sonra arka planda API'ye gönderilir (çevrimdışıyken de çalışmaya devam edilir). Kurallar: [`SENKRONIZASYON.md`](SENKRONIZASYON.md).
+- Hesap verileri tarayıcıda hesap başına ayrı tutulur ve çıkış yapınca o bilgisayardan silinir (okul bilgisayarları paylaşımlı).
+
+**Web arayüzünü hesapla denemek:** API çalışırken http://localhost:3000/giris → **Demo öğretmen** ile sınıf aç, öğrenci hesabı oluştur; başka bir tarayıcı penceresinde (gizli pencere) öğrenci olarak gir.
 
 **API neden Docker'da değil?** Geliştirmede Mac'te doğrudan çalışması daha pratik: kodu kaydedince kendini yeniden başlatır, hatalar terminalde hemen görünür. Yayına alırken API de bir Docker kutusuna konacak.
 

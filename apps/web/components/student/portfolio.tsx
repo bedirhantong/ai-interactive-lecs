@@ -7,6 +7,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import type { Catalog } from "@/lib/content/catalog";
 import { LEVEL_LABELS, type Lesson } from "@/lib/content/schema";
 import { toIpynb } from "@/lib/notebook/ipynb";
+import { buildPortfolioEntry } from "@/lib/notebook/portfolio";
 import type { SavedNotebook } from "@/lib/notebook/types";
 import { useProgressHydrated } from "@/lib/progress/hydration";
 import { useProgress } from "@/lib/progress/store";
@@ -19,7 +20,16 @@ export function Portfolio({ catalog, lessons }: { catalog: Catalog; lessons: Rec
   const progress = useProgress((s) => s.lessons);
   if (!hydrated) return <div className="h-48 animate-pulse rounded-2xl bg-surface-2" />;
 
-  const entries = Object.values(portfolio).sort((a, b) => b.completedAt.localeCompare(a.completedAt));
+  // Entries are cached when a project is finished on this device. Projects finished on another
+  // device (synced notebooks) are rebuilt here from the notebook itself.
+  const derived = Object.values(lessons).flatMap((lesson) => {
+    const done = progress[lesson.id]?.completedAt;
+    if (!done || !lesson.projectId || portfolio[`${lesson.projectId}:${lesson.id}`]) return [];
+    const saved = readJson<SavedNotebook>(notebookKey(lesson.id));
+    const entry = saved ? buildPortfolioEntry(lesson, saved.cells, done) : null;
+    return entry ? [entry] : [];
+  });
+  const entries = [...Object.values(portfolio), ...derived].sort((a, b) => b.completedAt.localeCompare(a.completedAt));
   const inProgress = Object.values(catalog.projects).flatMap((p) =>
     Object.values(p.modes).filter((id) => progress[id] && !progress[id].completedAt).map((id) => ({ project: p, lessonId: id })),
   );

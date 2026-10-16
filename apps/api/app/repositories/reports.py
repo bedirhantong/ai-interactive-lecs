@@ -32,3 +32,14 @@ class ReportRepository:
                 TrainingReport.user_id == user_id, TrainingReport.lesson_id == lesson_id, TrainingReport.content_hash == content_hash
             )
         )
+
+    def summary_for_users(self, user_ids: list[uuid.UUID]) -> dict[uuid.UUID, dict]:
+        """Per user: number of reports and the test accuracy of the latest one."""
+        out: dict[uuid.UUID, dict] = {uid: {"reports": 0, "latest_test_accuracy": None} for uid in user_ids}
+        if not user_ids:
+            return out
+        for report in self.db.scalars(select(TrainingReport).where(TrainingReport.user_id.in_(user_ids)).order_by(TrainingReport.id)):
+            entry = out[report.user_id]
+            entry["reports"] += 1
+            entry["latest_test_accuracy"] = report.test_accuracy
+        return out

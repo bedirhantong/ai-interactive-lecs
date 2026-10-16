@@ -102,3 +102,13 @@ describe("saved notebooks across lesson versions", () => {
     expect(s.getState().completions["serbest-alan"]).toBeUndefined();
   });
 });
+
+describe("evidence callbacks", () => {
+  it("reports completion events to onEvidence (they feed the teacher's view)", async () => {
+    const lesson = loadContent().lessons.get("python-ilk-adimlar")!;
+    const seen: string[] = [];
+    const store = createNotebookStore({ lesson, datasets: {}, saved: null, sessionId: "s", callbacks: { onEvidence: (e) => seen.push(`${e.kind}:${e.cellId}`) } });
+    store.getState().update("dusun", (s) => ({ ...s, submittedText: "x".repeat(80), submittedAt: "2026-10-16T10:00:00Z", text: "x".repeat(80) }));
+    expect(seen).toContain("cell-completed:dusun");
+  });
+});

@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.dialects import postgresql, sqlite
 from sqlalchemy.orm import Session
 
@@ -38,3 +38,29 @@ class ProgressRepository:
 
     def all_for_user(self, user_id: uuid.UUID) -> list[ProgressEvent]:
         return list(self.db.scalars(select(ProgressEvent).where(ProgressEvent.user_id == user_id).order_by(ProgressEvent.id)))
+
+    def summary_for_users(self, user_ids: list[uuid.UUID]) -> dict[uuid.UUID, dict]:
+        """Per user: last activity, completed lesson ids, number of passed challenges. One query each."""
+        if not user_ids:
+            return {}
+        out: dict[uuid.UUID, dict] = {uid: {"last_activity_at": None, "completed_lessons": [], "challenges_passed": 0} for uid in user_ids}
+        for uid, last in self.db.execute(
+            select(ProgressEvent.user_id, func.max(ProgressEvent.occurred_at))
+            .where(ProgressEvent.user_id.in_(user_ids))
+            .group_by(ProgressEvent.user_id)
+        ):
+            out[uid]["last_activity_at"] = last
+        for uid, lesson_id in self.db.execute(
+            select(ProgressEvent.user_id, ProgressEvent.lesson_id)
+            .where(ProgressEvent.user_id.in_(user_ids), ProgressEvent.kind == "lesson-completed")
+            .distinct()
+            .order_by(ProgressEvent.lesson_id)
+        ):
+            out[uid]["completed_lessons"].append(lesson_id)
+        for uid, count in self.db.execute(
+            select(ProgressEvent.user_id, func.count())
+            .where(ProgressEvent.user_id.in_(user_ids), ProgressEvent.kind == "challenge-passed")
+            .group_by(ProgressEvent.user_id)
+        ):
+            out[uid]["challenges_passed"] = count
+        return out

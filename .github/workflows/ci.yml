@@ -84,22 +84,52 @@ jobs:
       - run: npm run build
 
   e2e:
-    name: Web · end-to-end (Chrome, real Pyodide)
+    name: Web · end-to-end (Chrome, real Pyodide, real API + PostgreSQL)
     runs-on: ubuntu-24.04
-    defaults:
-      run:
-        working-directory: apps/web
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: atolye
+          POSTGRES_PASSWORD: atolye
+          POSTGRES_DB: atolye
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U atolye -d atolye"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      ATOLYE_DATABASE_URL: postgresql+psycopg://atolye:atolye@localhost:5432/atolye
+      ATOLYE_DEMO_MODE: "true"
+      ATOLYE_ALLOWED_ORIGINS: http://localhost:3100
+      E2E_REQUIRE_API: "1"
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: apps/api/pyproject.toml
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
-      - run: npm ci
+      - name: Start the API
+        working-directory: apps/api
+        run: |
+          pip install -e .
+          alembic upgrade head
+          uvicorn app.main:app --port 8000 > ../../uvicorn.log 2>&1 &
+          for _ in $(seq 1 30); do curl -sf http://localhost:8000/api/v1/health/ready && break; sleep 1; done
+      - working-directory: apps/web
+        run: npm ci
       - name: Playwright system dependencies (uses the preinstalled Google Chrome)
+        working-directory: apps/web
         run: npx playwright install-deps chromium
-      - run: npx playwright test
+      - working-directory: apps/web
+        run: npx playwright test
+      - if: failure()
+        run: cat uvicorn.log
       - uses: actions/upload-artifact@v6
         if: failure()
         with:

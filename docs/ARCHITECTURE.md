@@ -108,3 +108,12 @@ Security: httpOnly SameSite=Lax cookies (Secure required in production); state-c
 ## 9. Future infrastructure (deliberately not built)
 
 There are no per-student kernels, GPU servers or job queues. The intended production shape is a static/CDN frontend, one small API instance and managed PostgreSQL. Heavier labs mean more Colab templates, not more servers. Options if needed later: self-hosted Pyodide, an image-classification Colab template with a pretrained backbone (clearly labelled as transfer learning), and an optional LLM tutor behind the existing authored-hint fallback.
+
+
+## Web ↔ API (v1)
+
+- The browser calls the API on the same origin (`/api/v1`): Next.js rewrites it in development, Caddy routes it in production. Session cookies stay first-party (`HttpOnly`, `SameSite=Lax`, `Secure` in production); state-changing requests carry `x-atolye-client: 1`.
+- `lib/session/store.ts` holds the session (`guest`, `authenticated`, `expired`, `offline`). Without a reachable API the app starts in guest (demo) mode after a short timeout.
+- Local storage is namespaced per account (`aiatolye:u:<id>:`) because school computers are shared; signing out deletes the account's local copy. Guest data keeps the original `aiatolye:v1:` namespace.
+- `lib/sync/engine.ts` implements `docs/SENKRONIZASYON.md` with injected dependencies (unit-tested against an in-memory imitation of the API); `lib/sync/store.ts` wires it to the app (debounced uploads, 30 s interval, on reconnect, on tab hide). Notebooks open only after checking for a newer server copy; conflicts are resolved by the student in `components/sync/conflict-banner.tsx`.
+- Teacher pages (`/ogretmen/...`) use the classroom, overview, evidence and reflection endpoints; the API enforces every permission (the UI guard is convenience only).

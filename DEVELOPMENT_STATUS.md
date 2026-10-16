@@ -2,7 +2,7 @@
 
 _Last updated: 2026-10-16. Roadmap: [`docs/REVISED_ROADMAP.md`](docs/REVISED_ROADMAP.md)._
 
-**Current phase:** Backend hardening toward production. Steps 1 (PostgreSQL), 2 (error format, request ids, JSON logs, health probes, security headers, ruff, jsonb) and 3 (layered SOLID architecture, base response envelope, teacher-created student accounts, first-login password change, resets, password policy, brute-force protection, cleanup) done. Step 4 (KVKK: export, rectification, erasure with verified cascades, access log of teacher access, retention) done. Step 5 (sync contract: notebook revisions with ETag/If-Match and atomic compare-and-set, idempotent progress events, deduplicated reports, notebook list for startup sync) done. Step 6 (deployment readiness: API and web images, one-command production stack with Caddy HTTPS, migrate-before-start, daily maintenance job, CI workflow, deployment guide) done. Next: connect the web app to the API (docs/SENKRONIZASYON.md). Frontend ↔ API sync follows the backend steps.
+**Current phase:** v1 complete: student experience (guest or signed in), offline-first sync, teacher panel, KVKK rights, production stack and CI. Open source (MIT code, CC BY 4.0 content).
 
 ## Verified (automated tests or real browser runs)
 
@@ -27,6 +27,8 @@ _Last updated: 2026-10-16. Roadmap: [`docs/REVISED_ROADMAP.md`](docs/REVISED_ROA
 | KVKK: export without secrets, profile correction, account deletion removes every row (FK cascades enforced in SQLite tests too), teacher deletes only accounts they created, access log with teacher views, audit anonymized after deletion, retention windows, opt-in inactive deletion | pytest (71 tests total, SQLite and PostgreSQL) |
 | Sync: two-device conflict (412) and resolution, 428 without precondition, atomic compare-and-set at the database level, idempotent event retries (also within a batch and per user), report dedup across reformatting, CORS for If-Match/ETag | pytest (84 tests total, SQLite and PostgreSQL) |
 | Postman collection (49 requests, 92 assertions) against the running API, including a run that reuses leftover cookies | Newman |
+| **Web ↔ API (v1):** teacher creates a class and student accounts with printable one-time credentials; student's forced password change (weak password rejected); assignment shown to the student; real Python run and reflection synced; same work restored on a second device; concurrent edits on two devices raise the conflict prompt and the chosen version wins; teacher sees overview, evidence and reflection; access log shows the teacher's view; sign-out removes the account's local copy | Playwright against the real API and PostgreSQL (`accounts-sync.spec.ts`), also in CI |
+| Sync engine: create/update with revisions, second device download, conflict on concurrent edits and both resolutions, offline then upload, expired session, outbox filtering/batching/idempotency, report upload | Vitest with an in-memory imitation of the API (`sync-engine.test.ts`) |
 | Production stack from scratch (db → migrate → api/maintenance/web → Caddy HTTPS): readiness, web pages, HSTS and security headers, docs disabled, demo refused, admin login with HttpOnly+Secure+SameSite cookie, CSRF rejection, cleanup job | `scripts/prod_smoke_test.sh` against `deploy/compose.prod.yml`, locally with Docker |
 | CI on GitHub Actions (all 6 jobs: API on SQLite and PostgreSQL, web build, e2e in Chrome, Postman contract, Colab notebook execution, production stack smoke test over HTTPS) | Green on GitHub. The first run's production-job failure (Compose v2 healthcheck/pull) was reproduced locally and fixed. |
 | Python lint/format (ruff, incl. bandit security rules) | `npm run lint:api` |
@@ -43,17 +45,16 @@ _Last updated: 2026-10-16. Roadmap: [`docs/REVISED_ROADMAP.md`](docs/REVISED_ROA
 
 ## Known issues and limitations
 
-- **The web app does not call the API yet.** All student data stays in `localStorage`, and teacher features exist only as API endpoints with no teacher UI.
+- Teacher panel v1 covers classes, accounts, assignments and review; there is no admin UI yet (admins use the API/CLI).
+- Guest (demo) work done before signing in is not moved into the account; it stays in the guest area of that browser.
 - All progress, grading and Colab results are self-reported (computed in the browser or in the student's Colab session).
 - The Python worker's network restriction is best effort, not a sandbox (see `docs/ARCHITECTURE.md` §8).
 - Pyodide and Monaco depend on jsDelivr. Monaco falls back to a textarea; Pyodide has no offline fallback.
 - With Cache Components, an unknown lesson URL renders the 404 page through streaming. Check the HTTP status in production hosting.
-- There is no rate limiting, audit log or data-retention job in the API.
 
 ## Next steps
 
-1. Optional frontend ↔ API sync (demo login, push snapshots, progress events and Colab reports; localStorage stays the offline default).
-2. Teacher UI on top of the existing classroom endpoints, including reviewing reflections and Colab reports.
-3. Run the template inside real Google Colab and publish the repository so "Google Colab'da Aç" works.
+1. Validate with teachers: a pilot lesson in a real class (see the discussion in the roadmap).
+2. Run the Colab template inside real Google Colab now that the repository is public.
 4. e2e tests for the regression lab and developer mode; an accessibility pass.
 5. Phase 7: CSP and security headers, a sandboxed runtime iframe, KVKK review, load testing.

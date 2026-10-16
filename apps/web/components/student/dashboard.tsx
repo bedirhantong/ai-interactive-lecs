@@ -9,6 +9,7 @@ import type { Catalog } from "@/lib/content/catalog";
 import { LEVEL_DESCRIPTIONS, LEVEL_LABELS, LEVELS, type Level, STARTER_LESSON } from "@/lib/content/schema";
 import { useProgressHydrated } from "@/lib/progress/hydration";
 import { useProgress } from "@/lib/progress/store";
+import { useSession } from "@/lib/session/store";
 import { cn } from "@/lib/cn";
 import { LessonCard, lessonState } from "./lesson-status";
 
@@ -44,12 +45,13 @@ export function LevelPicker({ value, onPick, compact }: { value?: Level; onPick:
 
 export function Dashboard({ catalog }: { catalog: Catalog }) {
   const hydrated = useProgressHydrated();
+  const sessionUser = useSession((s) => (s.status === "authenticated" ? s.user : null));
   const { profile, lessons, recent, skills, lastLessonId, setProfile } = useProgress();
 
   if (!hydrated) return <div className="h-64 animate-pulse rounded-2xl bg-surface-2" aria-busy="true" />;
 
   const started = Object.keys(lessons).length > 0;
-  const name = profile.displayName.trim();
+  const name = (sessionUser?.display_name ?? profile.displayName).trim();
 
   if (!started) {
     return (

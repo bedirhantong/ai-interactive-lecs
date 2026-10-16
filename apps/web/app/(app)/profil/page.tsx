@@ -8,7 +8,7 @@ export default function ProfilePage() {
     <div className="max-w-3xl space-y-6">
       <header>
         <h1 className="text-3xl font-extrabold tracking-tight">Profil</h1>
-        <p className="mt-2 text-muted">Hesap gerekmez. Burada yaptığın ayarlar yalnızca bu tarayıcıda saklanır.</p>
+        <p className="mt-2 text-muted">Hesabın, tercihlerin ve verilerin. Hesapsız kullanıyorsan ayarlar yalnızca bu tarayıcıda saklanır.</p>
       </header>
       <ProfileSettings />
     </div>
