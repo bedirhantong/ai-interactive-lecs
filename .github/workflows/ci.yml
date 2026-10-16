@@ -37,8 +37,8 @@ jobs:
       run:
         working-directory: apps/api
     steps:
+      - uses: actions/setup-python@v7
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -74,7 +74,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
-      - uses: actions/setup-python@v6  # unit tests run generated Python with CPython
+      - uses: actions/setup-python@v7  # unit tests run generated Python with CPython
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - run: npm ci
@@ -103,8 +103,8 @@ jobs:
       ATOLYE_ALLOWED_ORIGINS: http://localhost:3100
       E2E_REQUIRE_API: "1"
     steps:
+      - uses: actions/setup-python@v7
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -155,8 +155,8 @@ jobs:
       ATOLYE_DATABASE_URL: postgresql+psycopg://atolye:atolye@localhost:5432/atolye
       ATOLYE_DEMO_MODE: "true"
     steps:
+      - uses: actions/setup-python@v7
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -182,8 +182,8 @@ jobs:
     name: Colab Lab · template builds and runs end to end
     runs-on: ubuntu-24.04
     steps:
+      - uses: actions/setup-python@v7
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"  # close to Google Colab's runtime
       - run: pip install numpy pandas scikit-learn matplotlib nbformat nbclient ipykernel
