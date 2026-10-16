@@ -13,6 +13,7 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Runner image pinned so an "ubuntu-latest" switch cannot break CI unannounced; bump deliberately.
 env:
   PYTHON_VERSION: "3.14"
   NODE_VERSION: "24"
@@ -20,7 +21,7 @@ env:
 jobs:
   api:
     name: API · lint, tests (SQLite + PostgreSQL), migrations
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:17-alpine
@@ -36,8 +37,8 @@ jobs:
       run:
         working-directory: apps/api
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -62,18 +63,18 @@ jobs:
 
   web:
     name: Web · lint, typecheck, unit tests, build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: apps/web
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
-      - uses: actions/setup-python@v5  # unit tests run generated Python with CPython
+      - uses: actions/setup-python@v6  # unit tests run generated Python with CPython
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - run: npm ci
@@ -84,13 +85,13 @@ jobs:
 
   e2e:
     name: Web · end-to-end (Chrome, real Pyodide)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: apps/web
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -99,7 +100,7 @@ jobs:
       - name: Playwright system dependencies (uses the preinstalled Google Chrome)
         run: npx playwright install-deps chromium
       - run: npx playwright test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: failure()
         with:
           name: playwright-results
@@ -108,7 +109,7 @@ jobs:
 
   api-contract:
     name: API · Postman collection against a running API
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:17-alpine
@@ -124,13 +125,13 @@ jobs:
       ATOLYE_DATABASE_URL: postgresql+psycopg://atolye:atolye@localhost:5432/atolye
       ATOLYE_DEMO_MODE: "true"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
           cache-dependency-path: apps/api/pyproject.toml
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
       - working-directory: apps/api
@@ -149,10 +150,10 @@ jobs:
 
   colab-notebook:
     name: Colab Lab · template builds and runs end to end
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"  # close to Google Colab's runtime
       - run: pip install numpy pandas scikit-learn matplotlib nbformat nbclient ipykernel
@@ -165,9 +166,9 @@ jobs:
 
   production-images:
     name: Production · build images, start the stack, smoke test over HTTPS
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Throwaway secrets for this run
         run: |
           cat > ci.env <<ENV

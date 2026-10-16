@@ -50,6 +50,8 @@ services:
 
   api:
     image: ai-atolye-api:${IMAGE_TAG:-latest}
+    # Built by the "migrate" service (same image); never pulled from a registry.
+    pull_policy: never
     restart: unless-stopped
     environment:
       <<: *api-env
@@ -63,11 +65,19 @@ services:
   maintenance:
     # Daily housekeeping and data retention (python -m app.cli cleanup).
     image: ai-atolye-api:${IMAGE_TAG:-latest}
+    pull_policy: never
     restart: unless-stopped
-    command: ["sh", "-c", "while true; do python -m app.cli cleanup; sleep 86400; done"]
+    # Marks each successful run, so the healthcheck can tell whether cleanup is still happening.
+    command: ["sh", "-c", "while true; do python -m app.cli cleanup && touch /tmp/last-cleanup; sleep 86400; done"]
     environment: *api-env
     healthcheck:
-      disable: true
+      # Healthy while the last successful cleanup is less than 26 hours old.
+      test: ["CMD", "python", "-c", "import os, sys, time; sys.exit(0 if time.time() - os.path.getmtime('/tmp/last-cleanup') < 93600 else 1)"]
+      interval: 5m
+      timeout: 5s
+      start_period: 2m
+      start_interval: 2s
+      retries: 1
     depends_on:
       migrate: { condition: service_completed_successfully }
     networks: [internal]

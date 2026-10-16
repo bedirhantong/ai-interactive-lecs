@@ -70,7 +70,7 @@ Başlangıç sırası otomatiktir: veritabanı hazır → **migrate** (yeni migr
 
 ## 5. Günlük temizlik ve saklama süreleri
 
-`maintenance` servisi günde bir kez `python -m app.cli cleanup` çalıştırır ve sonucu loglar:
+`maintenance` servisi günde bir kez `python -m app.cli cleanup` çalıştırır ve sonucu loglar. Son başarılı temizlik 26 saatten eskiyse servis `unhealthy` görünür (`docker compose ps`); böylece durmuş bir temizlik görevi fark edilir.
 
 | Ne silinir | Ne zaman |
 |---|---|
