@@ -38,7 +38,7 @@ jobs:
         working-directory: apps/api
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -74,7 +74,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
-      - uses: actions/setup-python@v6  # unit tests run generated Python with CPython
+      - uses: actions/setup-python@v7  # unit tests run generated Python with CPython
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - run: npm ci
@@ -104,7 +104,7 @@ jobs:
       E2E_REQUIRE_API: "1"
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -156,7 +156,7 @@ jobs:
       ATOLYE_DEMO_MODE: "true"
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -183,7 +183,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"  # close to Google Colab's runtime
       - run: pip install numpy pandas scikit-learn matplotlib nbformat nbclient ipykernel
